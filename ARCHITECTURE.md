@@ -196,7 +196,7 @@ Next.js App Router (SSR/ISR)
 |---|---|---|
 | 0 — Project Setup | ✅ Complete | Fonts, DB connection, health-check, config |
 | 1 — Design Tokens & Components | ✅ Complete | Wobbly borders, hand-drawn design tokens, layout utility, UI components (Button, Card, Input, Select, Badge, RankTab, Accordion, Toggle), and showcase page |
-| 2 — Data Layer & Schema | 🟡 In Progress | Mongoose models (User, Category, Question, FeatureFlag, AuditLog, Suggestion), seed script (seed.ts), Zod schemas, and Categories & Questions CRUD API routes built. Pending MongoDB Atlas URI to seed and verify. |
+| 2 — Data Layer & Schema | ✅ Complete | Mongoose models (User, Category, Question, FeatureFlag, AuditLog, Suggestion), seed script (seed.ts), Zod schemas, HTML sanitization, video URL normalization, and CRUD API endpoints built and verified against MongoDB Atlas. |
 | 3 — Auth & RBAC | 🔲 Not started | |
 | 4 — Admin Dashboard | 🔲 Not started | |
 | 5 — Public Pages | 🔲 Not started | |

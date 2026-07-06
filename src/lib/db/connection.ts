@@ -23,45 +23,22 @@ declare global {
   };
 }
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    "MONGODB_URI is not defined. Please add it to your .env.local file.\n" +
-      "See .env.example for the expected format."
-  );
-}
-
-/**
- * Cached connection object. In development, this is stored on `globalThis`
- * to survive hot module replacement. In production, module-level caching
- * is sufficient since the module is only loaded once per cold start.
- */
 const cached = globalThis.mongooseConnection ?? { conn: null, promise: null };
 
 if (process.env.NODE_ENV === "development") {
   globalThis.mongooseConnection = cached;
 }
 
-/**
- * Connects to MongoDB Atlas and returns the mongoose instance.
- * Uses a cached connection when available.
- *
- * @returns The mongoose connection instance.
- * @throws {Error} If MONGODB_URI is not configured.
- *
- * @example
- * ```ts
- * import { connectDB } from "@/lib/db/connection";
- *
- * export async function GET() {
- *   await connectDB();
- *   const categories = await Category.find({ isPublished: true });
- *   return Response.json(categories);
- * }
- * ```
- */
 export async function connectDB(): Promise<typeof mongoose> {
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    throw new Error(
+      "MONGODB_URI is not defined. Please add it to your .env.local file.\n" +
+        "See .env.example for the expected format."
+    );
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -74,7 +51,7 @@ export async function connectDB(): Promise<typeof mongoose> {
       maxPoolSize: 5,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => {
+    cached.promise = mongoose.connect(uri, opts).then((m) => {
       console.log("[DB] Connected to MongoDB Atlas");
       return m;
     });
