@@ -17,6 +17,8 @@ import { Question } from "@/lib/db/models/Question";
 import { Card } from "@/components/ui";
 import { CategoryQuestionsContainer } from "./CategoryQuestionsContainer";
 
+export const revalidate = 3600; // Revalidate every hour (ISR)
+
 interface CategoryQuestionsPageProps {
   params: Promise<{ categorySlug: string }>;
 }

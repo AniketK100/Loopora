@@ -14,6 +14,8 @@ import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { Card, Badge } from "@/components/ui";
 
+export const revalidate = 3600; // Revalidate every hour (ISR)
+
 export const metadata: Metadata = {
   title: "Interview Library folders",
   description: "Browse interview question folders across technical, HR, system design, and situational topics.",
