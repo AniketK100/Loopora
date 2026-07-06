@@ -56,6 +56,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           <NavLink href="/admin/questions">📝 Questions</NavLink>
           <NavLink href="/admin/flags">🚩 Feature Flags</NavLink>
           <NavLink href="/admin/suggestions">💡 Suggestions</NavLink>
+          <NavLink href="/admin/audit-logs">🛡️ Audit Logs</NavLink>
         </nav>
 
         {/* User profile footer */}
