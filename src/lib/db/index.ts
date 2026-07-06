@@ -33,3 +33,6 @@ export type { IAuditLogDocument } from "./models/AuditLog";
 
 export { Suggestion } from "./models/Suggestion";
 export type { ISuggestionDocument } from "./models/Suggestion";
+
+export { RateLimit } from "./models/RateLimit";
+export type { IRateLimitDocument } from "./models/RateLimit";

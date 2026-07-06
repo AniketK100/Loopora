@@ -14,6 +14,7 @@ import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
 import { categoryUpdateSchema, objectIdSchema } from "@/lib/validators";
+import { requireRole } from "@/lib/auth/rbac";
 import { ApiResponse } from "@/types";
 
 interface RouteParams {
@@ -63,6 +64,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
+    // 1. Enforce RBAC
+    const rbac = await requireRole(["admin", "editor"]);
+    if (!rbac.authorized) {
+      return NextResponse.json(
+        { success: false, error: rbac.error },
+        { status: rbac.status }
+      );
+    }
+
     await connectDB();
     const { id } = await params;
 
@@ -132,6 +142,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    // 1. Enforce RBAC
+    const rbac = await requireRole(["admin", "editor"]);
+    if (!rbac.authorized) {
+      return NextResponse.json(
+        { success: false, error: rbac.error },
+        { status: rbac.status }
+      );
+    }
+
     await connectDB();
     const { id } = await params;
 

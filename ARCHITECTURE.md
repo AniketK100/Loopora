@@ -197,7 +197,7 @@ Next.js App Router (SSR/ISR)
 | 0 — Project Setup | ✅ Complete | Fonts, DB connection, health-check, config |
 | 1 — Design Tokens & Components | ✅ Complete | Wobbly borders, hand-drawn design tokens, layout utility, UI components (Button, Card, Input, Select, Badge, RankTab, Accordion, Toggle), and showcase page |
 | 2 — Data Layer & Schema | ✅ Complete | Mongoose models (User, Category, Question, FeatureFlag, AuditLog, Suggestion), seed script (seed.ts), Zod schemas, HTML sanitization, video URL normalization, and CRUD API endpoints built and verified against MongoDB Atlas. |
-| 3 — Auth & RBAC | 🔲 Not started | |
+| 3 — Auth & RBAC | ✅ Complete | NextAuth.js v5 (auth.js) configured with Credentials and Google OAuth fallback, Edge middleware routing guards, requireRole server utility, credentials login & registration routes, and database-backed IP rate limiter (10 req/min/IP). |
 | 4 — Admin Dashboard | 🔲 Not started | |
 | 5 — Public Pages | 🔲 Not started | |
 | 6 — Content Seeding | 🔲 Not started | Decoupled from engineering |

@@ -121,3 +121,14 @@ export const suggestionCreateSchema = z.object({
   questionText: z.string().min(5, { message: "Question must be at least 5 characters long" }).trim(),
   notes: z.string().max(500).optional().or(z.literal("")),
 });
+
+// =============================================================================
+// Auth Validators
+// =============================================================================
+
+export const signupSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters long" }).trim(),
+  email: z.string().email({ message: "Invalid email address" }).trim().toLowerCase(),
+  password: z.string().min(8, { message: "Password must be at least 8 characters long" }),
+});
+

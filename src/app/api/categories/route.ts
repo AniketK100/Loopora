@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { categoryCreateSchema } from "@/lib/validators";
+import { requireRole } from "@/lib/auth/rbac";
 import { ApiResponse } from "@/types";
 
 /**
@@ -56,6 +57,15 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // 1. Enforce RBAC
+    const rbac = await requireRole(["admin", "editor"]);
+    if (!rbac.authorized) {
+      return NextResponse.json(
+        { success: false, error: rbac.error },
+        { status: rbac.status }
+      );
+    }
+
     await connectDB();
 
     const body = await request.json();

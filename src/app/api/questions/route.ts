@@ -16,6 +16,7 @@ import { Question } from "@/lib/db/models/Question";
 import { questionCreateSchema } from "@/lib/validators";
 import { normalizeVideoUrl } from "@/lib/embed/normalize";
 import { sanitizeAnswerHtml } from "@/lib/utils/sanitize";
+import { requireRole } from "@/lib/auth/rbac";
 import { ApiResponse } from "@/types";
 
 /**
@@ -150,6 +151,15 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // 1. Enforce RBAC
+    const rbac = await requireRole(["admin", "editor"]);
+    if (!rbac.authorized) {
+      return NextResponse.json(
+        { success: false, error: rbac.error },
+        { status: rbac.status }
+      );
+    }
+
     await connectDB();
 
     const body = await request.json();
