@@ -14,3 +14,22 @@
  */
 
 export { connectDB, getConnectionStatus } from "./connection";
+
+// Models
+export { User } from "./models/User";
+export type { IUserDocument } from "./models/User";
+
+export { Category } from "./models/Category";
+export type { ICategoryDocument } from "./models/Category";
+
+export { Question, Video } from "./models/Question";
+export type { IQuestionDocument, IVideoDocument } from "./models/Question";
+
+export { FeatureFlag } from "./models/FeatureFlag";
+export type { IFeatureFlagDocument } from "./models/FeatureFlag";
+
+export { AuditLog } from "./models/AuditLog";
+export type { IAuditLogDocument } from "./models/AuditLog";
+
+export { Suggestion } from "./models/Suggestion";
+export type { ISuggestionDocument } from "./models/Suggestion";
