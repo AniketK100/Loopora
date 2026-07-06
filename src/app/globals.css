@@ -1,0 +1,182 @@
+/**
+ * Global Styles — InterviewLoop Design Token System
+ *
+ * This file defines the complete design token palette as CSS custom properties,
+ * Tailwind CSS v4 theme bindings, and global base styles.
+ *
+ * Design tokens source: Hand-Drawn Design System doc + UI/UX Brief §1-3
+ * Color values, shadows, radii, and font mappings are authoritative here —
+ * do not invent new colors/fonts outside this palette.
+ *
+ * @see 04_UIUX_Design_Brief.md §1 — Design Direction
+ */
+
+@import "tailwindcss";
+
+/* =============================================================================
+   1. DESIGN TOKENS (CSS Custom Properties)
+   =============================================================================
+   These variables are the single source of truth for all visual styling.
+   Components consume these via Tailwind utilities or direct var() references.
+   ========================================================================== */
+
+:root {
+  /* --- Colors -------------------------------------------------------------- */
+  --color-bg: #faf8f5;             /* Warm paper white */
+  --color-bg-alt: #f5f0ea;         /* Slightly darker paper (cards, panels) */
+  --color-fg: #2d2d2d;             /* Pencil black */
+  --color-fg-muted: #6b6b6b;      /* Lighter text for secondary content */
+  --color-muted: #e8e4df;          /* Eraser grey (borders, dividers) */
+  --color-accent: #e63946;         /* Marker red (CTAs, active states) */
+  --color-accent-hover: #d62839;   /* Darker red for hover */
+  --color-secondary: #457b9d;      /* Ballpoint blue (links, secondary actions) */
+  --color-secondary-hover: #3a6a89;/* Darker blue for hover */
+  --color-post-it: #ffe066;        /* Post-it yellow (badges, highlights) */
+  --color-post-it-dark: #ffd633;   /* Darker yellow for borders/emphasis */
+  --color-border: #2d2d2d;         /* Pencil-black borders */
+  --color-border-light: #d4d0cb;   /* Lighter border for subtle separation */
+  --color-success: #2d936c;        /* Green checkmark/success */
+  --color-warning: #f4a261;        /* Orange warning */
+  --color-error: #e63946;          /* Red error (same as accent) */
+
+  /* --- Category Type Colors ------------------------------------------------ */
+  /* Up to 3 signal colors for category footer strips per UI/UX Brief §3 */
+  --color-category-hr: #e63946;         /* HR / General = Accent red */
+  --color-category-technical: #457b9d;  /* Technical = Ballpoint blue */
+  --color-category-situational: #d4a843;/* Situational/Other = Muted gold */
+
+  /* --- Shadows ------------------------------------------------------------- */
+  --shadow-default: 3px 3px 0px 0px rgba(45, 45, 45, 0.1);
+  --shadow-emphasized: 8px 8px 0px 0px #2d2d2d;
+  --shadow-hover: 2px 2px 0px 0px rgba(45, 45, 45, 0.15);
+  --shadow-button-active: 1px 1px 0px 0px rgba(45, 45, 45, 0.1);
+
+  /* --- Radii (wobbly hand-drawn borders) ----------------------------------- */
+  /* Irregular border-radius values simulate imperfect hand-drawn shapes */
+  --radius-wobbly: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --radius-wobbly-md: 15px 255px 15px 225px / 255px 15px 225px 15px;
+  --radius-wobbly-sm: 185px 12px 195px 12px / 12px 195px 12px 185px;
+  --radius-wobbly-lg: 280px 20px 260px 20px / 20px 260px 20px 280px;
+  --radius-round: 50%;
+
+  /* --- Spacing (base scale) ------------------------------------------------ */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+  --space-3xl: 4rem;     /* 64px */
+
+  /* --- Typography ---------------------------------------------------------- */
+  --font-heading: var(--font-kalam), "Segoe UI", cursive;
+  --font-body: var(--font-patrick-hand), "Segoe UI", cursive;
+  --font-mono: "Courier New", monospace;
+
+  /* --- Transitions --------------------------------------------------------- */
+  --transition-fast: 100ms ease-out;
+  --transition-default: 200ms ease-out;
+  --transition-slow: 300ms ease-out;
+
+  /* --- Z-index scale ------------------------------------------------------- */
+  --z-base: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-modal: 30;
+  --z-tooltip: 40;
+  --z-toast: 50;
+}
+
+/* =============================================================================
+   2. TAILWIND CSS v4 THEME BINDINGS
+   =============================================================================
+   Maps CSS custom properties to Tailwind utility classes via @theme.
+   ========================================================================== */
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-fg);
+
+  /* Fonts */
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+/* =============================================================================
+   3. GLOBAL BASE STYLES
+   ========================================================================== */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+/* --- Paper grain background texture ---------------------------------------- */
+/* Dot-grid pattern simulating notebook/graph paper per UI/UX Brief §1 */
+.paper-grain {
+  background-image: radial-gradient(
+    circle,
+    var(--color-border-light) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 24px 24px;
+}
+
+/* --- Wobbly border radius utilities ---------------------------------------- */
+.wobbly {
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+.wobbly-md {
+  border-radius: 15px 255px 15px 225px / 255px 15px 225px 15px;
+}
+.wobbly-sm {
+  border-radius: 185px 12px 195px 12px / 12px 195px 12px 185px;
+}
+.wobbly-lg {
+  border-radius: 280px 20px 260px 20px / 20px 260px 20px 280px;
+}
+
+/* --- Reduced motion -------------------------------------------------------- */
+/* Respect user's motion preferences per TRD §7 Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Focus styles ---------------------------------------------------------- */
+/* High-contrast focus ring for keyboard navigation */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* --- Scrollbar styling (subtle, on-brand) ---------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-alt);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-fg-muted);
+}
+
+/* --- Selection color ------------------------------------------------------- */
+::selection {
+  background-color: var(--color-post-it);
+  color: var(--color-fg);
+}
