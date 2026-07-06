@@ -43,8 +43,8 @@ const patrickHand = Patrick_Hand({
 
 export const metadata: Metadata = {
   title: {
-    default: "InterviewLoop — Ace Every Interview Question",
-    template: "%s | InterviewLoop",
+    default: "Loopora — Ace Every Interview Question",
+    template: "%s | Loopora",
   },
   description:
     "Structured interview preparation with 500+ frequently asked questions, " +
@@ -53,6 +53,26 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXTAUTH_URL ?? "http://localhost:3000"
   ),
+  openGraph: {
+    type: "website",
+    siteName: "Loopora",
+    title: "Loopora — Ace Every Interview Question",
+    description: "Structured interview preparation with curated Q&As and real video walkthroughs.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Loopora — Ace Every Interview Question",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Loopora — Ace Every Interview Question",
+    description: "Structured interview preparation with curated Q&As and real video walkthroughs.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({

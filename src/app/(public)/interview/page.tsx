@@ -19,6 +19,9 @@ export const revalidate = 3600; // Revalidate every hour (ISR)
 export const metadata: Metadata = {
   title: "Interview Library folders",
   description: "Browse interview question folders across technical, HR, system design, and situational topics.",
+  alternates: {
+    canonical: "/interview",
+  },
 };
 
 export default async function InterviewLibraryPage() {

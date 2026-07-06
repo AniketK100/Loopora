@@ -1,0 +1,47 @@
+# Loopora (InterviewLoop) — LLM Developer & Crawler Guide
+
+Loopora is an SEO-optimized interview preparation SaaS with a hand-drawn notebook/sketchbook aesthetic. It organizes Q&As into categories (folders) and questions, providing model written answers and inline switchable video explanations.
+
+## Tech Stack
+- **Framework:** Next.js (App Router, dynamic layouts)
+- **Styling:** Tailwind CSS v4, custom HSL design variables
+- **Data:** MongoDB Atlas, Mongoose ODM
+- **Auth:** NextAuth.js v5 (Credentials + RBAC)
+- **Validation:** Zod
+- **Typography:** Kalam (headings) + Patrick Hand (body)
+
+## Key Folder Paths
+- `src/app/(public)/` — Public-facing pages (landing, folders library, dynamic categories, solutions view)
+- `src/app/(admin)/admin/` — Content management system (CMS) dashboard, audit logs, feature flags, bulk import
+- `src/app/api/` — API handlers (rate-limited auth, suggestions, bulk-import, flags)
+- `src/lib/db/` — Database connection singleton and schemas (User, Category, Question, FeatureFlag, AuditLog, Suggestion)
+- `src/components/ui/` — Wobbly hand-drawn aesthetic base components (Button, Card, Input, Accordion)
+
+## Database Models
+
+### Category Schema
+- `name` (String, required)
+- `slug` (String, required, unique)
+- `type` (String, required: "hr" | "technical" | "behavioral" | "situational" | "case-study")
+- `description` (String)
+- `icon` (String, e.g. "code", "user")
+- `order` (Number, default 0)
+- `questionCount` (Number, default 0)
+- `isPublished` (Boolean, default true)
+
+### Question Schema
+- `category` (ObjectId -> Category, required)
+- `slug` (String, required, unique)
+- `question` (String, required)
+- `answer` (Object: short, detailed [HTML], example)
+- `videos` (Array of VideoInput: label, url, order)
+- `difficulty` (Enum: "easy", "medium", "hard", default "medium")
+- `frequencyRank` (Number, default 0)
+- `tags` (Array of String)
+- `isPremium` (Boolean, default false)
+- `isPublished` (Boolean, default true)
+
+## Development Guidelines
+1. **RBAC Guarding:** Ensure `requireRole(['admin'])` protects all admin pages and mutating API endpoints.
+2. **Typecheck & Linting:** Keep builds cleanly typed (no arbitrary `any` without safety assertions) and verify compile status before git check-ins.
+3. **Wobbly Aesthetic:** Wrap visual panels inside `<Card decoration="tape">` or use `wobbly-sm`/`wobbly-md` border classes.

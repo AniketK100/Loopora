@@ -21,8 +21,12 @@ import { Card, Button, Badge } from "@/components/ui";
 import { LandingMotionWrapper } from "./LandingMotionWrapper";
 
 export const metadata = {
+  title: "Loopora — Ace Every Interview Question",
   description:
     "Ace your interviews with Loopora's curated Q&A lists, worked examples, and video walkthroughs.",
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default async function PublicHomePage() {

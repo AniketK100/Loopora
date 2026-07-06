@@ -35,6 +35,9 @@ export async function generateMetadata({
   return {
     title: `${category.name} Interview Questions`,
     description: category.description || `Practice model answers for ${category.name} interviews.`,
+    alternates: {
+      canonical: `/interview/${category.slug}`,
+    },
   };
 }
 
@@ -78,8 +81,27 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
 
   const iconEmoji = getIconEmoji(categoryDoc.icon);
 
+  // Generate FAQPage JSON-LD structured data for SEO
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": questionsData.map((q) => ({
+      "@type": "Question",
+      "name": q.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": q.answer.short || q.answer.detailed.replace(/<[^>]+>/g, "").trim(),
+      },
+    })),
+  };
+
   return (
     <div className="paper-grain min-h-screen py-12">
+      {/* FAQPage JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
         
         {/* Navigation Breadcrumb */}

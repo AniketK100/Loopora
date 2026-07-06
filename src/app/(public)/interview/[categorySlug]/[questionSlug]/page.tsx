@@ -31,7 +31,7 @@ export async function generateMetadata({
   params,
 }: QuestionDetailPageProps): Promise<Metadata> {
   await connectDB();
-  const { questionSlug } = await params;
+  const { categorySlug, questionSlug } = await params;
   const question = await Question.findOne({ slug: questionSlug.toLowerCase() });
 
   if (!question) return {};
@@ -39,6 +39,9 @@ export async function generateMetadata({
   return {
     title: `${question.question} Solution`,
     description: question.answer.short || "Ace your interview loop with our targeted model solutions.",
+    alternates: {
+      canonical: `/interview/${categorySlug}/${question.slug}`,
+    },
   };
 }
 
