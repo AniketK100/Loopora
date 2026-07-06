@@ -195,7 +195,7 @@ Next.js App Router (SSR/ISR)
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Project Setup | ✅ Complete | Fonts, DB connection, health-check, config |
-| 1 — Design Tokens & Components | 🔲 Not started | |
+| 1 — Design Tokens & Components | ✅ Complete | Wobbly borders, hand-drawn design tokens, layout utility, UI components (Button, Card, Input, Select, Badge, RankTab, Accordion, Toggle), and showcase page |
 | 2 — Data Layer & Schema | 🔲 Not started | |
 | 3 — Auth & RBAC | 🔲 Not started | |
 | 4 — Admin Dashboard | 🔲 Not started | |
