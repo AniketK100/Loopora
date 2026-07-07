@@ -180,3 +180,25 @@ body {
   background-color: var(--color-post-it);
   color: var(--color-fg);
 }
+
+/* --- Tactile Torn-Paper Divider -------------------------------------------- */
+.tear-paper-divider {
+  position: relative;
+  padding-bottom: 24px;
+}
+.tear-paper-divider::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0 Q10,12 20,4 T40,16 T60,2 T80,14 T100,5 T120,18 T140,8 T160,20 T180,6 T200,16 T220,4 T240,18 T260,7 T280,15 T300,3 T320,17 T340,9 T360,19 T380,5 T400,16 T420,8 T440,18 T460,4 T480,15 T500,6 T520,18 T540,8 T560,19 T580,5 T600,16 T620,7 T640,17 T660,3 T680,18 T700,9 T720,19 T740,6 T760,16 T780,8 T800,18 T820,4 T840,16 T860,5 T880,17 T900,9 T920,19 T940,6 T960,16 T980,8 T1000,18 T1020,4 T1040,16 T1060,5 T1080,17 T1100,9 T1120,19 T1140,6 T1160,16 T1180,8 T1200,18 L1200,120 L0,120 Z' fill='%23e6e2da'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  transform: translateY(1px);
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+.tear-paper-divider:hover::after {
+  transform: translateY(-2px) scaleY(1.15);
+  filter: drop-shadow(0 -1px 2px rgba(0,0,0,0.05));
+}

@@ -13,6 +13,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { PublicSignOutButton } from "./PublicSignOutButton";
 import { CookieConsent } from "@/components/ui";
+import { LenisProvider } from "@/components/LenisProvider";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -23,7 +24,8 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
   const user = session?.user;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-bg)]">
+    <LenisProvider>
+      <div className="flex flex-col min-h-screen bg-[var(--color-bg)]">
       {/* Public Nav Header */}
       <header className="border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -99,22 +101,48 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
       </main>
 
       {/* Shared Footer */}
-      <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-8 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
-        <div className="max-w-7xl mx-auto px-4 space-y-4">
+      <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
           <p className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)]">
             ✏️ Loopora — The Hand-Drawn Notebook for Interview Success.
           </p>
-          <div className="flex justify-center gap-6 text-xs">
-            <Link href="/interview" className="hover:underline">Interview Library</Link>
-            <Link href="/suggest" className="hover:underline">Submit Feedback</Link>
-            <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-            <Link href="/terms" className="hover:underline">Terms of Service</Link>
-            <Link href="/cookies" className="hover:underline">Cookie Policy</Link>
+          <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-xs font-[family-name:var(--font-heading)] font-bold">
+            <Link
+              href="/interview"
+              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-bg)] transition-colors"
+            >
+              📖 Library Folder
+            </Link>
+            <Link
+              href="/suggest"
+              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-post-it-dark)] hover:text-[var(--color-fg)] transition-colors"
+            >
+              💡 Suggest Q&A
+            </Link>
+            <Link
+              href="/privacy"
+              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
+            >
+              📄 Privacy Policy
+            </Link>
+            <Link
+              href="/terms"
+              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-success)] hover:text-[var(--color-bg)] transition-colors"
+            >
+              ⚖️ Terms of Service
+            </Link>
+            <Link
+              href="/cookies"
+              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-warning)] hover:text-[var(--color-bg)] transition-colors"
+            >
+              🍪 Cookie Policy
+            </Link>
           </div>
           <p className="text-xs">&copy; {new Date().getFullYear()} Loopora. Made with love for devs.</p>
         </div>
       </footer>
       <CookieConsent />
     </div>
+    </LenisProvider>
   );
 }

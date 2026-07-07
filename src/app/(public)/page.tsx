@@ -19,6 +19,7 @@ import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
 import { Card, Button, Badge } from "@/components/ui";
 import { LandingMotionWrapper } from "./LandingMotionWrapper";
+import { ClientCircuitWrapper } from "./ClientCircuitWrapper";
 
 export const metadata = {
   title: "Loopora — Ace Every Interview Question",
@@ -39,9 +40,9 @@ export default async function PublicHomePage() {
   ]);
 
   return (
-    <div className="paper-grain min-h-screen flex flex-col items-center">
+    <div className="paper-grain min-h-screen flex flex-col items-center w-full">
       {/* 1. Hero Section */}
-      <section className="max-w-4xl mx-auto px-4 pt-16 pb-12 text-center space-y-6">
+      <section className="max-w-4xl mx-auto px-4 pt-16 pb-16 text-center space-y-6 w-full tear-paper-divider">
         <LandingMotionWrapper type="hero">
           <Badge variant="accent" className="mb-4 text-base tracking-wider uppercase">
             ✏️ Notebook Prep
@@ -157,37 +158,8 @@ export default async function PublicHomePage() {
         </LandingMotionWrapper>
       </section>
 
-      {/* 4. Features Card Grid */}
-      <section className="max-w-5xl mx-auto px-4 py-16 w-full space-y-12">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold font-[family-name:var(--font-heading)]">
-            🎯 Engineered for Mastery
-          </h2>
-          <p className="text-base text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
-            We combined educational design frameworks with clean interactive tools.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card decoration="tape" className="p-6">
-            <h3 className="text-xl font-bold font-[family-name:var(--font-heading)] text-[var(--color-fg)]">
-              💼 Worked STAR Breakdowns
-            </h3>
-            <p className="text-sm text-[var(--color-fg-muted)] mt-2 font-[family-name:var(--font-body)]">
-              Every situational question includes a mock narrative broken down by Situation, Task, Action, and Result. Learn exactly how to formulate stories that highlight leadership and technical execution.
-            </p>
-          </Card>
-
-          <Card decoration="tape" className="p-6">
-            <h3 className="text-xl font-bold font-[family-name:var(--font-heading)] text-[var(--color-fg)]">
-              🎥 Video Switcher Panel
-            </h3>
-            <p className="text-sm text-[var(--color-fg-muted)] mt-2 font-[family-name:var(--font-body)]">
-              Pasted video tutorials from diverse creators (YouTube, Loom, Vimeo, Drive) render in an inline switcher player. Toggle between different presentation styles to find the explanation that clicks.
-            </p>
-          </Card>
-        </div>
-      </section>
+      {/* 4. Interactive scrollytelling circuit */}
+      <ClientCircuitWrapper />
     </div>
   );
 }
