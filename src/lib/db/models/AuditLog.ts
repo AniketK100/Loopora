@@ -17,6 +17,7 @@ export interface IAuditLogDocument extends Document {
   entityType: AuditEntityType;
   entityId: mongoose.Types.ObjectId;
   diff?: Record<string, unknown> | null;
+  reason?: string | null;
   createdAt: Date;
 }
 
@@ -25,17 +26,18 @@ const AuditLogSchema = new Schema<IAuditLogDocument>(
     actor: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     action: {
       type: String,
-      enum: ["create", "update", "delete", "publish", "unpublish"],
+      enum: ["create", "update", "delete", "publish", "unpublish", "impersonate", "impersonate_end"],
       required: true,
     },
     entityType: {
       type: String,
-      enum: ["Category", "Question", "FeatureFlag", "User"],
+      enum: ["Category", "Question", "FeatureFlag", "User", "Session", "Suggestion"],
       required: true,
       index: true,
     },
     entityId: { type: Schema.Types.ObjectId, required: true, index: true },
     diff: { type: Schema.Types.Mixed, default: null }, // Stores a delta snapshot of updated fields
+    reason: { type: String, default: null }, // Optional reason for the action (e.g. impersonation)
   },
   {
     // We only need createdAt, updatedAt is unnecessary for append-only logs

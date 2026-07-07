@@ -19,6 +19,9 @@ import { authConfig } from "./auth.config";
 import { connectDB } from "@/lib/db/connection";
 import { User } from "@/lib/db/models/User";
 
+import { headers } from "next/headers";
+import { Session } from "@/lib/db/models/Session";
+
 // Define TypeScript type expansion for NextAuth Session and User models
 declare module "next-auth" {
   interface User {
@@ -41,6 +44,29 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
+
+/**
+ * Parses user agent string to identify OS and browser.
+ */
+function parseUserAgent(ua: string | null): string {
+  if (!ua) return "Unknown Device";
+  let os = "Unknown OS";
+  let browser = "Unknown Browser";
+
+  if (/windows/i.test(ua)) os = "Windows";
+  else if (/macintosh|mac os x/i.test(ua)) os = "macOS";
+  else if (/linux/i.test(ua)) os = "Linux";
+  else if (/android/i.test(ua)) os = "Android";
+  else if (/iphone|ipad|ipod/i.test(ua)) os = "iOS";
+
+  if (/edg/i.test(ua)) browser = "Edge";
+  else if (/chrome/i.test(ua)) browser = "Chrome";
+  else if (/firefox/i.test(ua)) browser = "Firefox";
+  else if (/safari/i.test(ua)) browser = "Safari";
+  else if (/opera|opr/i.test(ua)) browser = "Opera";
+
+  return `${browser} on ${os}`;
+}
 
 const providers: Provider[] = [
   Credentials({
@@ -108,4 +134,35 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers,
+  events: {
+    async signIn({ user, account }) {
+      try {
+        await connectDB();
+        const headersList = await headers();
+        const userAgent = headersList.get("user-agent") || "";
+        const ip =
+          headersList.get("x-forwarded-for")?.split(",")[0].trim() ||
+          headersList.get("x-real-ip") ||
+          "127.0.0.1";
+        const device = parseUserAgent(userAgent);
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const loginMethod = account?.provider === "google" ? "google" : "credentials";
+
+        // Create the session tracking record in local DB
+        await Session.create({
+          user: user.id,
+          ip,
+          userAgent,
+          device,
+          loginMethod,
+          expiresAt,
+        });
+
+        // Update lastLoginAt on User model
+        await User.findByIdAndUpdate(user.id, { lastLoginAt: new Date() });
+      } catch (error) {
+        console.error("[Auth Event] Error creating user session record:", error);
+      }
+    },
+  },
 });

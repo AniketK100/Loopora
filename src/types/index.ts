@@ -150,13 +150,17 @@ export type AuditAction =
   | "update"
   | "delete"
   | "publish"
-  | "unpublish";
+  | "unpublish"
+  | "impersonate"
+  | "impersonate_end";
 
 export type AuditEntityType =
   | "Category"
   | "Question"
   | "FeatureFlag"
-  | "User";
+  | "User"
+  | "Session"
+  | "Suggestion";
 
 export interface AuditLog {
   _id: string;
@@ -165,7 +169,25 @@ export interface AuditLog {
   entityType: AuditEntityType;
   entityId: string;
   diff?: Record<string, unknown>; // Before/after snapshot
+  reason?: string; // Optional reason for the audit event
   createdAt: string;
+}
+
+// =============================================================================
+// Session
+// =============================================================================
+
+export interface SessionRecord {
+  _id: string;
+  user: string; // User ID (or populated User object)
+  ip: string;
+  userAgent: string;
+  device: string;
+  loginMethod: "credentials" | "google";
+  createdAt: string;
+  lastActiveAt: string;
+  revokedAt?: string | null;
+  expiresAt: string;
 }
 
 // =============================================================================
@@ -207,3 +229,4 @@ export interface PaginatedResponse<T> {
     hasMore: boolean;
   };
 }
+

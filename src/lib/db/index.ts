@@ -36,3 +36,6 @@ export type { ISuggestionDocument } from "./models/Suggestion";
 
 export { RateLimit } from "./models/RateLimit";
 export type { IRateLimitDocument } from "./models/RateLimit";
+
+export { Session } from "./models/Session";
+export type { ISessionDocument } from "./models/Session";
