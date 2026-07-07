@@ -12,6 +12,7 @@ import React from "react";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { PublicSignOutButton } from "./PublicSignOutButton";
+import { CookieConsent } from "@/components/ui";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -102,10 +103,12 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
             <Link href="/suggest" className="hover:underline">Submit Feedback</Link>
             <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
             <Link href="/terms" className="hover:underline">Terms of Service</Link>
+            <Link href="/cookies" className="hover:underline">Cookie Policy</Link>
           </div>
           <p className="text-xs">&copy; {new Date().getFullYear()} Loopora. Made with love for devs.</p>
         </div>
       </footer>
+      <CookieConsent />
     </div>
   );
 }

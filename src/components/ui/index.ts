@@ -31,3 +31,5 @@ export type { SelectProps, SelectOption } from "./Select";
 
 export { Toggle } from "./Toggle";
 export type { ToggleProps } from "./Toggle";
+
+export { CookieConsent } from "./CookieConsent";

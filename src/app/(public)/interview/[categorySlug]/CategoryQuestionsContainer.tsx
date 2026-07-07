@@ -13,6 +13,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Accordion, Input, Badge, Button } from "@/components/ui";
 import { Difficulty } from "@/types";
+import { trackEvent } from "@/lib/analytics";
 
 interface QuestionData {
   _id: string;
@@ -135,7 +136,15 @@ export function CategoryQuestionsContainer({
             label="Search this folder"
             placeholder="Type key terms, e.g. recursion, arrays..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              if (e.target.value.length >= 3) {
+                trackEvent("search_questions", {
+                  categorySlug: category.slug,
+                  query: e.target.value,
+                });
+              }
+            }}
           />
         </div>
 
@@ -149,7 +158,13 @@ export function CategoryQuestionsContainer({
               <button
                 key={d.key}
                 type="button"
-                onClick={() => setFilterDifficulty(d.key)}
+                onClick={() => {
+                  setFilterDifficulty(d.key);
+                  trackEvent("filter_difficulty", {
+                    categorySlug: category.slug,
+                    difficulty: d.key,
+                  });
+                }}
                 className={[
                   "px-3 py-1 text-xs font-bold font-[family-name:var(--font-heading)] transition-all",
                   filterDifficulty === d.key
@@ -171,7 +186,22 @@ export function CategoryQuestionsContainer({
             No questions match your current search or difficulty filter.
           </div>
         ) : (
-          <Accordion items={accordionItems} />
+          <Accordion
+            items={accordionItems}
+            onExpandedChange={(ids) => {
+              if (ids.length > 0) {
+                const expandedId = ids[ids.length - 1];
+                const matchingQ = questions.find((q) => q._id === expandedId);
+                if (matchingQ) {
+                  trackEvent("expand_question", {
+                    categorySlug: category.slug,
+                    questionSlug: matchingQ.slug,
+                    isPremium: matchingQ.isPremium,
+                  });
+                }
+              }
+            }}
+          />
         )}
       </div>
     </div>

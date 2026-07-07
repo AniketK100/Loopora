@@ -15,6 +15,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Card, Button, Badge } from "@/components/ui";
+import { trackEvent } from "@/lib/analytics";
 
 interface VideoData {
   label: string;
@@ -237,7 +238,14 @@ export function QuestionDetailContainer({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setActiveVideoIndex(idx)}
+                      onClick={() => {
+                        setActiveVideoIndex(idx);
+                        trackEvent("switch_video_presenter", {
+                          questionSlug: question.slug,
+                          presenterLabel: vid.label,
+                          url: vid.url,
+                        });
+                      }}
                       className={[
                         "px-4 py-2 text-xs font-bold font-[family-name:var(--font-heading)] border-2 wobbly-sm transition-all",
                         activeVideoIndex === idx
