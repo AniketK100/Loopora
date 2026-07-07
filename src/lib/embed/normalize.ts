@@ -30,10 +30,10 @@ const VIMEO_REGEX =
   /(?:vimeo\.com\/(?:channels\/[^\/]+\/|groups\/[^\/]+\/album\/[^\/]+\/video\/|showcase\/[^\/]+\/video\/|video\/)?|player\.vimeo\.com\/video\/)(\d+)/i;
 
 const LOOM_REGEX =
-  /(?:loom\.com\/(?:share|embed)\/)([a-f0-9]{32})/i;
+  /(?:loom\.com\/(?:share|embed)\/)([a-zA-Z0-9]+)/i;
 
 const DRIVE_REGEX =
-  /(?:drive\.google\.com\/file\/d\/)([a-zA-Z0-9_-]{25,})(?:\/view|\/preview)?/i;
+  /(?:drive\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)(?:\/view|\/preview)?/i;
 
 const DIRECT_MP4_REGEX =
   /^https?:\/\/.+\.(mp4|webm|ogg)$/i;
