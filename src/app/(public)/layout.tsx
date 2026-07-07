@@ -1,19 +1,21 @@
 /**
- * Public Layout Component — Server Component
+ * Public Layout Component - Server Component
  *
- * Outlines the shared header (brand navigation, dynamic login profiles)
- * and footer for all candidate-facing public routes.
+ * Outlines the shared header, route-aware maintenance handling, and shared
+ * public footer for non-home public routes.
  *
  * @module app/(public)/layout
- * @see 03_App_Flow.md §1 — Site Map (public flow)
  */
 
 import React from "react";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { PublicSignOutButton } from "./PublicSignOutButton";
-import { CookieConsent } from "@/components/ui";
+import { headers } from "next/headers";
+import { CookieConsent, UnderMaintenance } from "@/components/ui";
 import { LenisProvider } from "@/components/LenisProvider";
+import { isMaintenanceModeActive } from "@/lib/flags";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -23,126 +25,131 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
   const session = await auth();
   const user = session?.user;
 
+  const isMaint = await isMaintenanceModeActive();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAuthRoute = pathname === "/login" || pathname === "/signup";
+  const isHomeRoute = pathname === "/" || pathname === "";
+  const isAdmin = user?.role === "admin" || user?.role === "editor";
+
+  if (isMaint && !isHomeRoute && !isAuthRoute && !isAdmin) {
+    return <UnderMaintenance />;
+  }
+
   return (
     <LenisProvider>
+      <ImpersonationBanner />
       <div className="flex flex-col min-h-screen bg-[var(--color-bg)]">
-      {/* Public Nav Header */}
-      <header className="border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo Brand */}
-          <Link href="/" className="flex items-center gap-2">
-            <span
-              className="text-2xl font-bold hover:rotate-2 transition-transform cursor-pointer"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-fg)" }}
-            >
-              ✏️ Loopora
-            </span>
-          </Link>
+        <header className="border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <span
+                className="text-2xl font-bold hover:rotate-2 transition-transform cursor-pointer"
+                style={{ fontFamily: "var(--font-heading)", color: "var(--color-fg)" }}
+              >
+                Loopora
+              </span>
+            </Link>
 
-          {/* Nav Links */}
-          <nav className="hidden md:flex items-center space-x-6 font-[family-name:var(--font-heading)] font-bold text-lg">
-            <Link href="/interview" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
-              📖 Library
-            </Link>
-            <Link href="/search" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
-              🔍 Search
-            </Link>
-            <Link href="/suggest" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
-              💡 Suggest Q&A
-            </Link>
-          </nav>
+            <nav className="hidden md:flex items-center space-x-6 font-[family-name:var(--font-heading)] font-bold text-lg">
+              <Link href="/interview" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+                Library
+              </Link>
+              <Link href="/search" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+                Search
+              </Link>
+              <Link href="/suggest" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+                Suggest Q&A
+              </Link>
+            </nav>
 
-          {/* Profile Area */}
-          <div className="flex items-center gap-4 font-[family-name:var(--font-heading)] font-bold">
-            {user ? (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/profile"
-                  className="text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] transition-colors font-[family-name:var(--font-body)] hidden sm:inline"
-                >
-                  Hi, {user.name}
-                </Link>
-                
-                {/* Admin/Editor redirect link */}
-                {(user.role === "admin" || user.role === "editor") && (
+            <div className="flex items-center gap-4 font-[family-name:var(--font-heading)] font-bold">
+              {user ? (
+                <div className="flex items-center gap-3">
                   <Link
-                    href="/admin"
-                    className="px-3 py-1.5 text-sm bg-[var(--color-accent)] text-[var(--color-bg)] wobbly-sm border-2 border-[var(--color-border)] hover:translate-y-[-1px] transition-transform"
+                    href="/profile"
+                    className="text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] transition-colors font-[family-name:var(--font-body)] hidden sm:inline"
                   >
-                    🛠️ Admin
+                    Hi, {user.name}
                   </Link>
-                )}
 
-                <PublicSignOutButton />
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
+                  {(user.role === "admin" || user.role === "editor") && (
+                    <Link
+                      href="/admin"
+                      className="px-3 py-1.5 text-sm bg-[var(--color-accent)] text-[var(--color-bg)] wobbly-sm border-2 border-[var(--color-border)] hover:translate-y-[-1px] transition-transform"
+                    >
+                      Admin
+                    </Link>
+                  )}
+
+                  <PublicSignOutButton />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/login"
+                    className="px-3 py-1.5 text-sm border-2 border-[var(--color-border)] wobbly-sm hover:bg-[var(--color-bg-alt)] transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="px-3 py-1.5 text-sm bg-[var(--color-secondary)] text-[var(--color-bg)] wobbly-sm border-2 border-[var(--color-border)] hover:translate-y-[-1px] transition-transform"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1">{children}</main>
+
+        {!isHomeRoute && (
+          <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
+            <div className="max-w-7xl mx-auto px-4 space-y-6">
+              <p className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)]">
+                Loopora - The Hand-Drawn Notebook for Interview Success.
+              </p>
+              <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-xs font-[family-name:var(--font-heading)] font-bold">
                 <Link
-                  href="/login"
-                  className="px-3 py-1.5 text-sm border-2 border-[var(--color-border)] wobbly-sm hover:bg-[var(--color-bg-alt)] transition-colors"
+                  href="/interview"
+                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-bg)] transition-colors"
                 >
-                  Sign In
+                  Library Folder
                 </Link>
                 <Link
-                  href="/signup"
-                  className="px-3 py-1.5 text-sm bg-[var(--color-secondary)] text-[var(--color-bg)] wobbly-sm border-2 border-[var(--color-border)] hover:translate-y-[-1px] transition-transform"
+                  href="/suggest"
+                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-post-it-dark)] hover:text-[var(--color-fg)] transition-colors"
                 >
-                  Sign Up
+                  Suggest Q&A
+                </Link>
+                <Link
+                  href="/privacy"
+                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  href="/terms"
+                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-success)] hover:text-[var(--color-bg)] transition-colors"
+                >
+                  Terms of Service
+                </Link>
+                <Link
+                  href="/cookies"
+                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-warning)] hover:text-[var(--color-bg)] transition-colors"
+                >
+                  Cookie Policy
                 </Link>
               </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Pages Content */}
-      <main className="flex-1">
-        {children}
-      </main>
-
-      {/* Shared Footer */}
-      <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
-        <div className="max-w-7xl mx-auto px-4 space-y-6">
-          <p className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)]">
-            ✏️ Loopora — The Hand-Drawn Notebook for Interview Success.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-xs font-[family-name:var(--font-heading)] font-bold">
-            <Link
-              href="/interview"
-              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-bg)] transition-colors"
-            >
-              📖 Library Folder
-            </Link>
-            <Link
-              href="/suggest"
-              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-post-it-dark)] hover:text-[var(--color-fg)] transition-colors"
-            >
-              💡 Suggest Q&A
-            </Link>
-            <Link
-              href="/privacy"
-              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
-            >
-              📄 Privacy Policy
-            </Link>
-            <Link
-              href="/terms"
-              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-success)] hover:text-[var(--color-bg)] transition-colors"
-            >
-              ⚖️ Terms of Service
-            </Link>
-            <Link
-              href="/cookies"
-              className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-warning)] hover:text-[var(--color-bg)] transition-colors"
-            >
-              🍪 Cookie Policy
-            </Link>
-          </div>
-          <p className="text-xs">&copy; {new Date().getFullYear()} Loopora. Made with love for devs.</p>
-        </div>
-      </footer>
-      <CookieConsent />
-    </div>
+              <p className="text-xs">&copy; {new Date().getFullYear()} Loopora. Made for interview prep.</p>
+            </div>
+          </footer>
+        )}
+        <CookieConsent />
+      </div>
     </LenisProvider>
   );
 }

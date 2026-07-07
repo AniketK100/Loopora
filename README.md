@@ -195,16 +195,16 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation of:
 | Phase | Status | Description |
 |---|---|---|
 | 0 — Project Setup | ✅ | Next.js, fonts, DB connection, health-check |
-| 1 — Design Tokens & Components | 🔲 | CSS tokens, base UI components |
-| 2 — Data Layer & Schema | 🔲 | Mongoose models, CRUD APIs, seed script |
-| 3 — Auth & RBAC | 🔲 | NextAuth, role guards, login/signup |
-| 4 — Admin Dashboard | 🔲 | CMS, video manager, bulk import, flags |
-| 5 — Public Pages | 🔲 | Landing, categories, accordion + video component |
-| 6 — Content Seeding | 🔲 | 50+ questions per category |
-| 7 — SEO Layer | 🔲 | JSON-LD, sitemap, OG tags |
-| 8 — Security Hardening | 🔲 | CSP, sanitization, audit |
-| 9 — Performance & A11y | 🔲 | Lighthouse, keyboard nav, WCAG |
-| 10 — Launch Readiness | 🔲 | Legal pages, analytics, monitoring |
+| 1 — Design Tokens & Components | ✅ | CSS tokens, base UI components |
+| 2 — Data Layer & Schema | ✅ | Mongoose models, CRUD APIs, seed script |
+| 3 — Auth & RBAC | ✅ | NextAuth, role guards, login/signup |
+| 4 — Admin Dashboard | ✅ | CMS, video manager, bulk import, flags |
+| 5 — Public Pages | ✅ | Landing, categories, accordion + video component |
+| 6 — Content Seeding | ✅ | 50+ questions per category |
+| 7 — SEO Layer | ✅ | JSON-LD, sitemap, OG tags |
+| 8 — Security Hardening | ✅ | CSP, sanitization, audit |
+| 9 — Performance & A11y | ✅ | Lighthouse, keyboard nav, WCAG |
+| 10 — Launch Readiness | ✅ | Legal pages, analytics, monitoring |
 
 ---
 

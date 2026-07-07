@@ -75,6 +75,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { Providers } from "@/components/Providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -85,7 +87,9 @@ export default function RootLayout({
       lang="en"
       className={`${kalam.variable} ${patrickHand.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      <body className="min-h-full flex flex-col antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

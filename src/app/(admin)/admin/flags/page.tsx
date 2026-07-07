@@ -1,18 +1,18 @@
 /**
  * Admin Feature Flags Page — Server Component
  *
- * Renders the toggle dashboard for runtime environment settings.
- * Automatically seeds default flags if none exist in the database.
+ * Fetches feature flag documents and seeds initial presets if none are present.
+ * Fetches lists of categories and questions to support granular target scopes in the FlagsManager.
  *
  * @route /admin/flags
- * @see 05_Backend_Schema_Data_Auth.md §2 — Mongoose Schemas (FeatureFlag)
  */
 
 import { Metadata } from "next";
 import { connectDB } from "@/lib/db/connection";
 import { FeatureFlag } from "@/lib/db/models/FeatureFlag";
-import { Card } from "@/components/ui";
-import { FlagToggle } from "./FlagToggle";
+import { Category } from "@/lib/db/models/Category";
+import { Question } from "@/lib/db/models/Question";
+import { FlagsManager } from "./FlagsManager";
 
 export const metadata: Metadata = {
   title: "Feature Flags Configuration — Admin",
@@ -21,10 +21,10 @@ export const metadata: Metadata = {
 export default async function AdminFeatureFlagsPage() {
   await connectDB();
 
-  // Fetch flags sorted by key
+  // 1. Fetch all flags
   let flags = await FeatureFlag.find().sort({ key: 1 });
 
-  // Auto-seed default flags if empty to ensure initial developer configuration is smooth
+  // 2. Auto-seed default flags if empty
   if (flags.length === 0) {
     const defaultFlags = [
       {
@@ -48,9 +48,34 @@ export default async function AdminFeatureFlagsPage() {
     ];
 
     await FeatureFlag.create(defaultFlags);
-    // Refetch
     flags = await FeatureFlag.find().sort({ key: 1 });
   }
+
+  // 3. Fetch categories and questions for target selection
+  const [categoriesRaw, questionsRaw] = await Promise.all([
+    Category.find().select("name").sort({ name: 1 }),
+    Question.find().select("question").sort({ question: 1 }),
+  ]);
+
+  const categories = categoriesRaw.map((c) => ({
+    id: c._id.toString(),
+    name: c.name,
+  }));
+
+  const questions = questionsRaw.map((q) => ({
+    id: q._id.toString(),
+    name: q.question,
+  }));
+
+  // Map mongoose flags documents to plain objects for FlagsManager
+  const serializedFlags = flags.map((f) => ({
+    _id: f._id.toString(),
+    key: f.key,
+    enabled: f.enabled,
+    scope: f.scope,
+    targetId: f.targetId ? f.targetId.toString() : null,
+    note: f.note || "",
+  }));
 
   return (
     <div className="space-y-6">
@@ -60,53 +85,22 @@ export default async function AdminFeatureFlagsPage() {
           className="text-3xl font-bold text-[var(--color-fg)]"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          🚩 Feature Flags & Runtime Configuration
+          🚩 Feature Flags & Granular Scopes
         </h2>
         <p
           className="text-base text-[var(--color-fg-muted)] mt-1"
           style={{ fontFamily: "var(--font-body)" }}
         >
-          Toggle system behaviors and launch beta features dynamically without code redeployments.
+          Configure system behaviors, target releases to specific folders or questions, or toggle maintenance mode.
         </p>
       </div>
 
-      {/* Flags Dashboard List */}
-      <Card decoration="none">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left font-[family-name:var(--font-body)]">
-            <thead>
-              <tr className="border-b-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] text-sm font-bold font-[family-name:var(--font-heading)]">
-                <th className="p-4 w-1/3">Config Key</th>
-                <th className="p-4 w-28 text-center">Scope</th>
-                <th className="p-4">Notes / Purpose</th>
-                <th className="p-4 w-28 text-center">Active Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y-2 divide-[var(--color-border-light)] text-base">
-              {flags.map((flag) => (
-                <tr key={flag._id.toString()} className="hover:bg-[var(--color-bg-alt)]/50 transition-colors">
-                  <td className="p-4">
-                    <span className="font-bold text-[var(--color-fg)] font-mono text-sm">
-                      {flag.key}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="inline-block px-2 py-0.5 text-xs font-bold uppercase tracking-wider bg-[var(--color-bg-alt)] text-[var(--color-fg-muted)] wobbly-sm border border-[var(--color-border-light)]">
-                      {flag.scope}
-                    </span>
-                  </td>
-                  <td className="p-4 text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
-                    {flag.note || "No description provided."}
-                  </td>
-                  <td className="p-4 text-center flex justify-center items-center">
-                    <FlagToggle id={flag._id.toString()} initialEnabled={flag.enabled} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      {/* Render the core Flags manager dashboard component */}
+      <FlagsManager
+        initialFlags={serializedFlags}
+        categories={categories}
+        questions={questions}
+      />
     </div>
   );
 }

@@ -17,8 +17,15 @@ import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth(() => {
-  const response = NextResponse.next();
+export default auth((req) => {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", req.nextUrl.pathname);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   // Content Security Policy (CSP) allowlist for embed providers
   const cspHeader = `

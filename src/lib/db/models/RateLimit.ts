@@ -15,6 +15,8 @@ export interface IRateLimitDocument extends Document {
   endpoint: string;
   hits: number;
   expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const RateLimitSchema = new Schema<IRateLimitDocument>(

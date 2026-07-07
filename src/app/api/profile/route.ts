@@ -1,9 +1,9 @@
 /**
  * User Profile API Route (GET, PATCH, DELETE)
  *
- * GET /api/profile — Fetch current user's profile metadata
- * PATCH /api/profile — Update current user's editable details (name only, validated)
- * DELETE /api/profile — Cascading delete of user profile and data (DPDP compliance)
+ * GET /api/profile â€” Fetch current user's profile metadata
+ * PATCH /api/profile â€” Update current user's editable details (name only, validated)
+ * DELETE /api/profile â€” Cascading delete of user profile and data (DPDP compliance)
  *
  * @route /api/profile
  */
@@ -22,7 +22,7 @@ const profileUpdateSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name cannot exceed 50 characters").trim(),
 });
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session || !session.user) {
@@ -124,7 +124,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE(_request: NextRequest) {
+export async function DELETE() {
   try {
     const session = await auth();
     if (!session || !session.user) {

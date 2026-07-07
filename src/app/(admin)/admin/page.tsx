@@ -115,8 +115,28 @@ export default async function AdminDashboardPage() {
           />
           <QuickActionCard
             title="Configure Toggles"
-            description="Manage maintenance modes, beta features, or dynamic publishes."
+            description="Manage maintenance modes, beta features, or granular target scopes."
             href="/admin/flags"
+          />
+          <QuickActionCard
+            title="User Accounts"
+            description="Manage roles (editors, admins), promote candidates, and run support impersonations."
+            href="/admin/users"
+          />
+          <QuickActionCard
+            title="Active Sessions"
+            description="Audit logged-in devices, monitor origin IPs, and revoke active keys."
+            href="/admin/sessions"
+          />
+          <QuickActionCard
+            title="Security Center"
+            description="Review active IP blocks, diagnostic status, and critical security audits."
+            href="/admin/security"
+          />
+          <QuickActionCard
+            title="System Health"
+            description="Inspect database ping metrics, environment configurations, and exception feeds."
+            href="/admin/system"
           />
           <QuickActionCard
             title="Review Suggestions"
@@ -127,6 +147,11 @@ export default async function AdminDashboardPage() {
             title="Audit Logs"
             description={`${recentAuditCount} total audit events recorded across all entities.`}
             href="/admin/audit-logs"
+          />
+          <QuickActionCard
+            title="Content Backup"
+            description="Download complete database content tables (categories, questions) in JSON."
+            href="/admin/content-export"
           />
           <QuickActionCard
             title="Bulk Import"

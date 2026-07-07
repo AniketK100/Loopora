@@ -1,13 +1,13 @@
 /**
  * Export User Personal Data API Route
  *
- * GET /api/profile/export — Downloads a JSON dump of the user's personal details,
+ * GET /api/profile/export â€” Downloads a JSON dump of the user's personal details,
  * bookmarks, and practice history (DPDP data portability compliance).
  *
  * @route /api/profile/export
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db/connection";
 import { User } from "@/lib/db/models/User";
@@ -23,7 +23,7 @@ interface PopulatedQuestion {
   } | null;
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session || !session.user) {

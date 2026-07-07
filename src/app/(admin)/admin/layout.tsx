@@ -15,6 +15,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { SignOutButton } from "./SignOutButton";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -31,34 +32,41 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const user = session.user;
 
   return (
-    <div className="paper-grain min-h-screen flex flex-col md:flex-row">
-      {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 border-b-2 md:border-b-0 md:border-r-2 border-[var(--color-border)] bg-[var(--color-bg)] flex flex-col z-10">
-        {/* Brand Header */}
-        <div className="p-6 border-b-2 border-dashed border-[var(--color-border-light)] flex items-center justify-between">
-          <Link href="/">
-            <h1
-              className="text-2xl font-bold hover:rotate-1 transition-transform"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-fg)" }}
-            >
-              ✏️ Loopora Admin
-            </h1>
-          </Link>
-          <span className="md:hidden">
-            {/* Optional mobile toggle placeholder */}
-          </span>
-        </div>
+    <div className="w-full flex flex-col">
+      <ImpersonationBanner />
+      <div className="paper-grain min-h-screen flex flex-col md:flex-row">
+        {/* Sidebar Navigation */}
+        <aside className="w-full md:w-64 border-b-2 md:border-b-0 md:border-r-2 border-[var(--color-border)] bg-[var(--color-bg)] flex flex-col z-10">
+          {/* Brand Header */}
+          <div className="p-6 border-b-2 border-dashed border-[var(--color-border-light)] flex items-center justify-between">
+            <Link href="/">
+              <h1
+                className="text-2xl font-bold hover:rotate-1 transition-transform"
+                style={{ fontFamily: "var(--font-heading)", color: "var(--color-fg)" }}
+              >
+                ✏️ Loopora Admin
+              </h1>
+            </Link>
+            <span className="md:hidden">
+              {/* Optional mobile toggle placeholder */}
+            </span>
+          </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 p-4 space-y-2 font-[family-name:var(--font-heading)] font-bold text-lg">
-          <NavLink href="/admin">📊 Dashboard</NavLink>
-          <NavLink href="/admin/categories">📁 Categories</NavLink>
-          <NavLink href="/admin/questions">📝 Questions</NavLink>
-          <NavLink href="/admin/flags">🚩 Feature Flags</NavLink>
-          <NavLink href="/admin/suggestions">💡 Suggestions</NavLink>
-          <NavLink href="/admin/audit-logs">🛡️ Audit Logs</NavLink>
-          <NavLink href="/admin/bulk-import">📥 Bulk Import</NavLink>
-        </nav>
+          {/* Navigation Links */}
+          <nav className="flex-1 p-4 space-y-2 font-[family-name:var(--font-heading)] font-bold text-base md:text-sm max-h-[70vh] overflow-y-auto">
+            <NavLink href="/admin">📊 Dashboard</NavLink>
+            <NavLink href="/admin/categories">📁 Categories</NavLink>
+            <NavLink href="/admin/questions">📝 Questions</NavLink>
+            <NavLink href="/admin/flags">🚩 Feature Flags</NavLink>
+            <NavLink href="/admin/suggestions">💡 Suggestions</NavLink>
+            <NavLink href="/admin/users">👥 User Accounts</NavLink>
+            <NavLink href="/admin/sessions">📱 Active Sessions</NavLink>
+            <NavLink href="/admin/security">🔒 Security Center</NavLink>
+            <NavLink href="/admin/system">⚙️ System Health</NavLink>
+            <NavLink href="/admin/audit-logs">📜 Audit Logs</NavLink>
+            <NavLink href="/admin/content-export">📥 Content Backup</NavLink>
+            <NavLink href="/admin/bulk-import">📥 Bulk Import</NavLink>
+          </nav>
 
         {/* User profile footer */}
         <div className="p-4 border-t-2 border-dashed border-[var(--color-border-light)] bg-[var(--color-bg-alt)]">
@@ -83,6 +91,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </div>
       </main>
+      </div>
     </div>
   );
 }

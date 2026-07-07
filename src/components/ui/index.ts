@@ -37,3 +37,5 @@ export { CookieConsent } from "./CookieConsent";
 export { FavoriteToggle } from "./FavoriteToggle";
 
 export { PracticedToggle } from "./PracticedToggle";
+
+export { default as UnderMaintenance } from "./UnderMaintenance";
