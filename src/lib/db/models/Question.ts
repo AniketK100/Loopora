@@ -30,7 +30,7 @@ const VideoSchema = new Schema<IVideoDocument>(
     label: { type: String, required: true, trim: true },
     provider: {
       type: String,
-      enum: ["youtube", "vimeo", "loom", "drive", "mp4"],
+      enum: ["youtube", "vimeo", "loom", "drive", "mp4", "instagram"],
       required: true,
     },
     url: { type: String, required: true, trim: true },

@@ -127,6 +127,12 @@ export function QuestionDetailContainer({
       return { type: "iframe", src: `https://drive.google.com/file/d/${driveMatch[1]}/preview` };
     }
 
+    // Instagram match
+    const instagramMatch = cleanUrl.match(/instagram\.com\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/i);
+    if (instagramMatch && instagramMatch[1]) {
+      return { type: "iframe", src: `https://www.instagram.com/p/${instagramMatch[1]}/embed` };
+    }
+
     // Direct MP4 / Cloudinary match
     if (/\.(mp4|webm|ogg)$/i.test(cleanUrl) || (cleanUrl.includes("res.cloudinary.com") && cleanUrl.includes("/video/upload/"))) {
       return { type: "video", src: cleanUrl };

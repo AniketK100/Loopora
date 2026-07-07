@@ -63,7 +63,7 @@ export interface Category {
 // Video (embedded sub-document)
 // =============================================================================
 
-export type VideoProvider = "youtube" | "vimeo" | "loom" | "drive" | "mp4";
+export type VideoProvider = "youtube" | "vimeo" | "loom" | "drive" | "mp4" | "instagram";
 
 export interface Video {
   _id: string;

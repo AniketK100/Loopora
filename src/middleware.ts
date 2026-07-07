@@ -27,7 +27,7 @@ export default auth(() => {
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: blob: res.cloudinary.com img.youtube.com i.vimeocdn.com;
     font-src 'self' data:;
-    frame-src 'self' https://www.youtube.com/ https://www.youtube-nocookie.com/ https://player.vimeo.com/ https://www.loom.com/ https://drive.google.com/;
+    frame-src 'self' https://www.youtube.com/ https://www.youtube-nocookie.com/ https://player.vimeo.com/ https://www.loom.com/ https://drive.google.com/ https://www.instagram.com/;
     connect-src 'self' ws: wss:;
     object-src 'none';
     base-uri 'self';

@@ -35,6 +35,9 @@ const LOOM_REGEX =
 const DRIVE_REGEX =
   /(?:drive\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)(?:\/view|\/preview)?/i;
 
+const INSTAGRAM_REGEX =
+  /(?:instagram\.com\/(?:p|reel|tv)\/)([a-zA-Z0-9_-]+)/i;
+
 const DIRECT_MP4_REGEX =
   /^https?:\/\/.+\.(mp4|webm|ogg)$/i;
 
@@ -108,7 +111,17 @@ export function normalizeVideoUrl(url: string): NormalizedVideo {
     };
   }
 
-  // 5. Direct MP4 Check
+  // 5. Instagram Check
+  const instagramMatch = cleanUrl.match(INSTAGRAM_REGEX);
+  if (instagramMatch && instagramMatch[1]) {
+    return {
+      provider: "instagram",
+      url: cleanUrl,
+      embedUrl: `https://www.instagram.com/p/${instagramMatch[1]}/embed`,
+    };
+  }
+
+  // 6. Direct MP4 Check
   // Also explicitly allow Cloudinary video URLs (which may not end in .mp4 but contain /video/upload/)
   const isCloudinaryVideo =
     cleanUrl.includes("res.cloudinary.com") && cleanUrl.includes("/video/upload/");
@@ -123,6 +136,6 @@ export function normalizeVideoUrl(url: string): NormalizedVideo {
 
   throw new Error(
     "Invalid or unsupported video source. " +
-      "We support YouTube, Vimeo, Loom, Google Drive previews, and direct .mp4/Cloudinary video links."
+      "We support YouTube, Vimeo, Loom, Google Drive, Instagram, and direct .mp4/Cloudinary video links."
   );
 }
