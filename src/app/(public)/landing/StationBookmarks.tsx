@@ -1,16 +1,15 @@
 /**
  * StationBookmarks — "The Drawer & Notebook"
  * 
- * Cable enters a partially open desk drawer.
- * Inside is a mini laptop with saved bookmarks and a physical notebook
- * with progress indicator rings that fill as the scroll advances.
- *
- * Features demonstrated: Bookmarks + Progress
+ * Camera tilts down-right over a desk drawer that slides open.
+ * Inside the drawer, a physical notebook opens.
+ * Bookmarks pin themselves, and progress ring indicators fill.
  */
 
 "use client";
 
-import { Bookmark, Pin } from "lucide-react";
+import { Pin, Bookmark } from "lucide-react";
+import { NotebookAsset } from "./components/NotebookAsset";
 
 interface StationBookmarksProps {
   progress: number;
@@ -19,88 +18,76 @@ interface StationBookmarksProps {
 
 export function StationBookmarks({ progress, reducedMotion }: StationBookmarksProps) {
   const isActive = progress > 0.15;
-  const isFilled = progress > 0.5 || reducedMotion;
+  const isFilled = progress > 0.45 || reducedMotion;
 
   return (
     <section
-      className={`station station-bookmarks ${isActive ? "active" : ""}`}
-      aria-label="Bookmarks and Progress tracking station"
+      className={`station station-bookmarks relative ${isActive ? "active" : ""}`}
+      aria-label="Bookmarks and Notebook Progress Station"
     >
-      <div className="station-inner">
-        {/* Environment: Drawer and physical notebook */}
-        <div className="drawer-environment">
+      <div className="station-inner relative z-10">
+        {/* Environment: Sliding Drawer containing an open notebook */}
+        <div className="drawer-environment w-full max-w-[500px]">
           <div className="drawer-frame">
-            {/* Drawer Laptop */}
-            <div className="drawer-laptop">
-              <div className="laptop-shell">
-                <div className="laptop-screen-inner" style={{ padding: "0.6rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.7rem", color: "var(--lamp-amber)", marginBottom: "0.4rem" }}>
-                    <Bookmark size={12} />
-                    <strong>Saved for Revision</strong>
+            <NotebookAsset isOpen={true} className="w-full">
+              <div className="flex flex-col gap-4 p-2 h-full">
+                {/* Header */}
+                <div className="flex items-center gap-2 border-b border-neutral-200 pb-2">
+                  <Bookmark size={14} className="text-red-500" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">Bookmarks & Progress</span>
+                </div>
+
+                {/* Bookmark cards inside notebook */}
+                <div className="flex flex-col gap-2 mt-1">
+                  <div className="bookmark-card bg-[#faf8f5] border border-neutral-300 text-neutral-700 flex items-center gap-2 p-2 rounded shadow-sm hover:translate-x-1 transition-all">
+                    <Pin size={10} className="text-red-500 rotate-45" />
+                    <span className="text-xs font-semibold">Consistent Hashing & DB partitioning</span>
+                  </div>
+                  <div className="bookmark-card bg-[#faf8f5] border border-neutral-300 text-neutral-700 flex items-center gap-2 p-2 rounded shadow-sm hover:translate-x-1 transition-all">
+                    <Pin size={10} className="text-red-500 rotate-45" />
+                    <span className="text-xs font-semibold">How to structure salary negotiations</span>
+                  </div>
+                </div>
+
+                {/* Progress Indicators */}
+                <div className="mt-4 flex items-center justify-between bg-neutral-100/50 p-2.5 rounded border border-neutral-200">
+                  <div className="text-left">
+                    <div className="text-lg font-black text-neutral-800">{isFilled ? "70%" : "0%"}</div>
+                    <div className="text-[0.62rem] text-neutral-500 uppercase font-bold tracking-wider">Completion Rate</div>
                   </div>
                   
-                  <div className="bookmark-list-demo">
-                    <div className="bookmark-card">
-                      <Pin size={10} className="bookmark-pin" />
-                      <span>Implement consistent hashing</span>
-                    </div>
-                    <div className="bookmark-card">
-                      <Pin size={10} className="bookmark-pin" />
-                      <span>Negotiation strategies: RSUs vs Base</span>
-                    </div>
-                    <div className="bookmark-card">
-                      <Pin size={10} className="bookmark-pin" />
-                      <span>STAR template: Database scaling</span>
-                    </div>
+                  {/* Vector progress indicator */}
+                  <div className="progress-ring-demo relative w-12 h-12" aria-hidden="true">
+                    <svg viewBox="0 0 60 60" className="w-full h-full">
+                      <circle className="progress-bg stroke-neutral-200" cx="30" cy="30" r="25" fill="none" strokeWidth="4" />
+                      <circle
+                        className="progress-fill stroke-red-500"
+                        cx="30"
+                        cy="30"
+                        r="25"
+                        fill="none"
+                        strokeWidth="4"
+                        style={{
+                          strokeDasharray: 157,
+                          strokeDashoffset: isFilled ? 47 : 157,
+                          transition: reducedMotion ? "none" : "stroke-dashoffset 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                        }}
+                      />
+                    </svg>
                   </div>
                 </div>
               </div>
-              <div className="laptop-led" />
-              <div className="laptop-hinge" />
-            </div>
-
-            {/* Notebook / Planner */}
-            <div className="notebook-prop">
-              <div className="notebook-title">Progress</div>
-              
-              <div className="progress-ring-demo" aria-hidden="true">
-                <svg viewBox="0 0 60 60">
-                  <circle className="progress-bg" cx="30" cy="30" r="25" />
-                  <circle
-                    className="progress-fill"
-                    cx="30"
-                    cy="30"
-                    r="25"
-                    style={{
-                      strokeDashoffset: isFilled ? 47 : 157,
-                      transition: reducedMotion ? "none" : "stroke-dashoffset 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-                    }}
-                  />
-                </svg>
-              </div>
-
-              <div className="progress-label">
-                <div style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--lamp-amber)" }}>
-                  {isActive ? "70%" : "0%"}
-                </div>
-                <div>Questions Mastered</div>
-              </div>
-
-              {/* Decorative flags sticking out */}
-              <div className="sticky-flag sticky-flag-1" />
-              <div className="sticky-flag sticky-flag-2" />
-              <div className="sticky-flag sticky-flag-3" />
-            </div>
+            </NotebookAsset>
           </div>
         </div>
 
         {/* Copy */}
-        <div>
+        <div className="flex flex-col gap-4">
           <p className="station-eyebrow">Bookmarks & Progress</p>
-          <h2 className="station-title">Track your growth in physical detail.</h2>
+          <h2 className="station-title">Revision sheets, physically organized.</h2>
           <p className="station-body">
-            Save weak links or high-yield concepts to custom bookmarks. Follow a structured progress
-            path that reveals your completion rates across behavioral, technical, and architectural categories.
+            Pin critical questions, code snippets, or architecture tips to your personal revision log.
+            Monitor completion percentages and master your weak points one by one.
           </p>
         </div>
       </div>

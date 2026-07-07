@@ -1,16 +1,15 @@
 /**
  * StationSTAR — "The Main Workstation"
  * 
- * Cable reaches a wall-mounted monitor.
- * S-T-A-R framework builds step-by-step.
- * AI practice widget with sound waveform is shown.
- *
- * Features demonstrated: STAR Answers + AI Practice
+ * Camera frames a symmetrical desktop layout.
+ * A large monitor powers on, building the STAR framework.
+ * Microphone and whiteboard sit adjacent, demonstrating active revision.
  */
 
 "use client";
 
 import { Mic } from "lucide-react";
+import { Monitor } from "./components/Monitor";
 
 interface StationSTARProps {
   progress: number;
@@ -20,86 +19,78 @@ interface StationSTARProps {
 export function StationSTAR({ progress, reducedMotion }: StationSTARProps) {
   const isActive = progress > 0.15;
 
-  // S-T-A-R letters revealed based on scroll progression
-  const showS = progress > 0.25 || reducedMotion;
+  const showS = progress > 0.28 || reducedMotion;
   const showT = progress > 0.45 || reducedMotion;
   const showA = progress > 0.65 || reducedMotion;
-  const showR = progress > 0.85 || reducedMotion;
+  const showR = progress > 0.82 || reducedMotion;
 
   return (
     <section
-      className={`station station-star ${isActive ? "active" : ""}`}
-      aria-label="STAR Answers and AI Practice station"
+      className={`station station-star relative ${isActive ? "active" : ""}`}
+      aria-label="STAR Workstation and AI Feedback Station"
     >
-      <div className="station-inner">
-        {/* Environment: Wall monitor and whiteboard */}
-        <div className="workstation-environment">
-          <div className="wall-monitor">
-            <div className="monitor-topbar">
-              <span /><span /><span />
-              <strong>STAR Builder & AI Practice</strong>
-            </div>
-            <div className="monitor-screen-content">
-              <p className="star-question">
-                &quot;Tell me about a time you resolved a major production bug...&quot;
-              </p>
+      <div className="station-inner relative z-10 flex flex-col items-center">
+        {/* Environment Monitor & Whiteboard */}
+        <div className="workstation-environment w-full max-w-[620px]">
+          <Monitor isOn={isActive} className="w-full">
+            <div className="flex flex-col gap-4 p-5 h-full justify-between">
+              {/* Question heading */}
+              <div className="border-b border-[#faf8f5]/5 pb-3">
+                <span className="text-[0.62rem] text-amber-500 uppercase tracking-widest font-bold">Stripe Scenario</span>
+                <p className="text-xs text-[#f0e6d6] italic mt-1">&quot;Tell me about a time you had to handle an API degradation...&quot;</p>
+              </div>
 
-              {/* STAR Framework Building */}
-              <div className="star-framework">
-                <div className={`star-letter ${showS ? "revealed" : ""}`}>
+              {/* STAR Layout */}
+              <div className="grid grid-cols-4 gap-3 my-2">
+                <div className={`star-letter transition-all duration-500 ${showS ? "revealed" : ""}`}>
                   <strong>S</strong>
                   <span>Situation</span>
-                  <p>Production went down on Friday afternoon during a deploy.</p>
+                  <p className="text-[0.6rem] text-neutral-500 mt-1">Degradation hit webhook dispatchers.</p>
                 </div>
-                <div className={`star-letter ${showT ? "revealed" : ""}`}>
+                <div className={`star-letter transition-all duration-500 ${showT ? "revealed" : ""}`}>
                   <strong>T</strong>
                   <span>Task</span>
-                  <p>Had to coordinate rollbacks and debug the core connection leak.</p>
+                  <p className="text-[0.6rem] text-neutral-500 mt-1">Prevent webhook request backlogs.</p>
                 </div>
-                <div className={`star-letter ${showA ? "revealed" : ""}`}>
+                <div className={`star-letter transition-all duration-500 ${showA ? "revealed" : ""}`}>
                   <strong>A</strong>
                   <span>Action</span>
-                  <p>Isolated DB connections, applied quick patch, verified thread pool.</p>
+                  <p className="text-[0.6rem] text-neutral-500 mt-1">Decoupled queue pool workers.</p>
                 </div>
-                <div className={`star-letter ${showR ? "revealed" : ""}`}>
+                <div className={`star-letter transition-all duration-500 ${showR ? "revealed" : ""}`}>
                   <strong>R</strong>
                   <span>Result</span>
-                  <p>Restored API within 12 mins. Set up alert checks to prevent repeat leaks.</p>
+                  <p className="text-[0.6rem] text-neutral-500 mt-1">Queue cleared within 8 minutes.</p>
                 </div>
               </div>
 
-              {/* AI Practice Widget */}
-              <div className="ai-widget">
-                <div className="ai-indicator" />
-                <Mic size={14} className="text-amber-500" />
-                <div className="ai-label">AI Analysis: Active Voice & Structuring</div>
-                <div className="ai-waveform" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
+              {/* AI Waveform bottom bar */}
+              <div className="flex items-center gap-3 p-2 bg-black/40 border border-neutral-800 rounded">
+                <Mic size={14} className="text-amber-500 animate-pulse" />
+                <div className="text-[0.65rem] text-[#a89882] font-mono">AI Voice Pacing Check: Steady</div>
+                <div className="ai-waveform flex gap-1 items-end h-3 ml-auto">
+                  <span className="w-[2px] h-2 bg-amber-500 rounded" />
+                  <span className="w-[2px] h-3 bg-amber-400 rounded animate-[wave_1.1s_infinite_alternate]" />
+                  <span className="w-[2px] h-1.5 bg-amber-600 rounded animate-[wave_0.8s_infinite_alternate]" />
+                  <span className="w-[2px] h-3 bg-amber-400 rounded" />
                 </div>
               </div>
             </div>
-          </div>
+          </Monitor>
 
-          {/* Whiteboard prop */}
-          <div className="whiteboard-prop">
-            <p style={{ fontSize: "0.68rem", color: "var(--ink-dim)", fontFamily: "monospace" }}>
-              Core Tip: Keep Situation &amp; Task to 20% total. Action is the meat!
-            </p>
+          {/* Adjacent Whiteboard tip */}
+          <div className="whiteboard-prop mt-4 p-3 bg-neutral-900/40 border border-dashed border-[#d4a052]/20 rounded-md text-center">
+            <span className="text-[0.68rem] text-amber-500/80 font-mono">Whiteboard Notes: Align with Amazon Leadership Principles</span>
           </div>
         </div>
 
         {/* Copy */}
-        <div>
-          <p className="station-eyebrow">Answer craft & feedback</p>
-          <h2 className="station-title">Structure answers that build confidence.</h2>
-          <p className="station-body">
-            Rehearse structured responses with our interactive STAR Builder. Receive real-time
-            feedback on your tone, metrics, structure, and pacing. Watch your answers sharpen.
+        <div className="text-center mt-6 max-w-xl">
+          <p className="station-eyebrow">Answer Frameworks</p>
+          <h2 className="station-title">Format narratives using the STAR method.</h2>
+          <p className="station-body mx-auto">
+            Build strong structured responses for behavioral reviews. Leverage integrated AI microphone checks
+            to trace structure, highlight impacts, and improve delivery tone.
           </p>
         </div>
       </div>

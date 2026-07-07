@@ -1,17 +1,17 @@
 /**
  * StationSearch — "The Workspace Shelf"
  * 
- * Cable curves to a wall-mounted shelf below the desk.
- * A laptop sits tilted on the shelf, showing a search interface
- * that types a query and reveals results with company filters.
- *
- * Features demonstrated: Search + Company Questions
+ * Camera pans down-left to a wood shelf.
+ * A developer laptop rests on it, powered on by the cable.
+ * Search queries type out automatically, showing real interview question results.
  */
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
+import { Shelf } from "./components/Shelf";
+import { Laptop } from "./components/Laptop";
 
 interface StationSearchProps {
   progress: number;
@@ -19,98 +19,89 @@ interface StationSearchProps {
 }
 
 const searchResults = [
-  { badge: "Behavioral", badgeClass: "badge-behavioral", title: "Tell me about a time you led a team under pressure", difficulty: "Medium" },
-  { badge: "System", badgeClass: "badge-system", title: "Design a URL shortener at scale", difficulty: "Hard" },
-  { badge: "React", badgeClass: "badge-react", title: "Explain React reconciliation and fiber architecture", difficulty: "Hard" },
-  { badge: "Behavioral", badgeClass: "badge-behavioral", title: "How do you handle disagreements with your manager?", difficulty: "Easy" },
+  { badge: "Behavioral", badgeClass: "badge-behavioral", title: "Tell me about a time you led a project under pressure", difficulty: "Medium" },
+  { badge: "System Design", badgeClass: "badge-system", title: "Design a scalable live chat application", difficulty: "Hard" },
+  { badge: "Algorithms", badgeClass: "badge-react", title: "Implement an LRU Cache with O(1) ops", difficulty: "Medium" },
 ];
 
-const companies = ["Google", "Meta", "Amazon", "Microsoft", "Stripe"];
-
 export function StationSearch({ progress, reducedMotion }: StationSearchProps) {
-  const stationRef = useRef<HTMLElement>(null);
-  const typedRef = useRef<HTMLSpanElement>(null);
-  const lastProgress = useRef(0);
-
+  const [typedText, setTypedText] = useState("");
   const isActive = progress > 0.15;
+  const isTypingTriggered = progress > 0.35 || reducedMotion;
 
-  // Typing animation for search bar
+  // Typing animation
   useEffect(() => {
-    if (reducedMotion || !typedRef.current) return;
-    
-    const text = "system design";
-    const el = typedRef.current;
+    if (reducedMotion || !isTypingTriggered) return;
 
-    if (progress > 0.2 && lastProgress.current <= 0.2) {
-      // Start typing
-      let i = 0;
-      const interval = setInterval(() => {
-        if (i <= text.length) {
-          el.textContent = text.slice(0, i);
-          i++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 60);
-      return () => clearInterval(interval);
-    }
-    lastProgress.current = progress;
-  }, [progress, reducedMotion]);
+    const fullText = "scalable real-time app";
+    let index = 0;
+    const interval = setInterval(() => {
+      setTypedText(fullText.slice(0, index));
+      index++;
+      if (index > fullText.length) {
+        clearInterval(interval);
+      }
+    }, 60);
+
+    return () => clearInterval(interval);
+  }, [isTypingTriggered, reducedMotion]);
 
   return (
     <section
-      ref={stationRef}
-      className={`station station-search ${isActive ? "active" : ""}`}
-      aria-label="Search and Company Questions station"
+      className={`station station-search relative ${isActive ? "active" : ""}`}
+      aria-label="Workspace Search Shelf Station"
     >
-      <div className="station-inner">
-        {/* Environment: Shelf with tilted laptop */}
-        <div className="shelf-environment">
-          <div className="shelf-book" aria-hidden="true" />
-          <div className="shelf-surface">
-            <div className="search-laptop">
-              <div className="laptop-shell">
-                <div className="laptop-screen-inner">
-                  {/* Search bar */}
-                  <div className="search-bar-demo">
-                    <Search size={14} />
-                    <span ref={typedRef}>{reducedMotion ? "system design" : ""}</span>
-                    {!reducedMotion && <span className="cursor-blink" />}
-                  </div>
+      <div className="station-inner relative z-10">
+        {/* Layer 1: Shelf Background & Environment */}
+        <div className="relative w-full max-w-[500px]">
+          <Shelf>
+            {/* Layer 3: Foreground Laptop sitting on shelf */}
+            <Laptop isOn={isActive} className="w-full">
+              <div className="flex flex-col gap-3 p-4 h-full">
+                {/* Search field mock */}
+                <div className="flex items-center gap-2 px-3 py-2 bg-[#12100d] border border-[#d4a052]/20 rounded-md">
+                  <Search size={14} className="text-amber-500/80" />
+                  <span className="text-xs text-[#f0e6d6] font-mono">
+                    {reducedMotion ? "scalable real-time app" : typedText}
+                  </span>
+                  <span className="w-1.5 h-3.5 bg-amber-500 animate-pulse" />
+                </div>
 
-                  {/* Search results */}
-                  <div className="search-results-demo">
-                    {searchResults.map((r, i) => (
-                      <div key={i} className="result-card-demo">
-                        <span className={`result-badge ${r.badgeClass}`}>{r.badge}</span>
-                        <span className="result-title-demo">{r.title}</span>
-                        <span className="result-difficulty">{r.difficulty}</span>
+                {/* Results listing */}
+                <div
+                  className={`flex flex-col gap-2 mt-2 transition-all duration-700 ${
+                    isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  }`}
+                >
+                  {searchResults.map((res, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 bg-neutral-900/60 border border-neutral-800 hover:border-amber-500/30 rounded transition-all duration-300 hover:translate-x-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[0.62rem] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${res.badgeClass}`}>
+                          {res.badge}
+                        </span>
+                        <span className="text-xs text-[#faf8f5]/90 truncate max-w-[180px]">
+                          {res.title}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Company filter chips */}
-                  <div className="company-filter-demo">
-                    {companies.map((c, i) => (
-                      <span key={c} className={`company-chip ${i === 0 ? "active" : ""}`}>{c}</span>
-                    ))}
-                  </div>
+                      <span className="text-[0.62rem] text-neutral-500 uppercase">{res.difficulty}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="laptop-led" />
-              <div className="laptop-hinge" />
-            </div>
-          </div>
+            </Laptop>
+          </Shelf>
         </div>
 
-        {/* Station copy */}
-        <div>
-          <p className="station-eyebrow">Signal first</p>
-          <h2 className="station-title">Search with precision, not noise.</h2>
+        {/* Text descriptions */}
+        <div className="flex flex-col gap-4">
+          <p className="station-eyebrow">Search Intelligence</p>
+          <h2 className="station-title">Find clarity. Avoid the search noise.</h2>
           <p className="station-body">
-            Prioritized interview questions with category context, difficulty signals,
-            and company-specific filters — all in one searchable system. Find exactly
-            what you need to practice, instantly.
+            Directly search through Stripe, Google, or Meta questions. Filter by topic, difficulty,
+            and common pitfalls. Every folder acts as a targeted study track.
           </p>
         </div>
       </div>

@@ -14,7 +14,7 @@ import { StationSearch } from "./landing/StationSearch";
 import { StationSTAR } from "./landing/StationSTAR";
 import { StationBookmarks } from "./landing/StationBookmarks";
 import { StationCommunity } from "./landing/StationCommunity";
-import { StudyRoom } from "./landing/StudyRoom";
+import { FinalScene } from "./landing/FinalScene";
 
 interface PremiumLandingPageProps {
   totalQuestions: number;
@@ -72,8 +72,8 @@ export function PremiumLandingPage({ totalQuestions, totalCategories }: PremiumL
         reducedMotion={reducedMotion}
       />
 
-      {/* Study Room Ending: Navigable Developer Workspace */}
-      <StudyRoom
+      {/* Final Scene Ending: Navigable Developer Workspace */}
+      <FinalScene
         progress={progress}
         reducedMotion={reducedMotion}
       />
