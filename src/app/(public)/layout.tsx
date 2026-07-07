@@ -42,6 +42,9 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
             <Link href="/interview" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
               📖 Library
             </Link>
+            <Link href="/search" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+              🔍 Search
+            </Link>
             <Link href="/suggest" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
               💡 Suggest Q&A
             </Link>
@@ -51,9 +54,12 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
           <div className="flex items-center gap-4 font-[family-name:var(--font-heading)] font-bold">
             {user ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] hidden sm:inline">
+                <Link
+                  href="/profile"
+                  className="text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] transition-colors font-[family-name:var(--font-body)] hidden sm:inline"
+                >
                   Hi, {user.name}
-                </span>
+                </Link>
                 
                 {/* Admin/Editor redirect link */}
                 {(user.role === "admin" || user.role === "editor") && (

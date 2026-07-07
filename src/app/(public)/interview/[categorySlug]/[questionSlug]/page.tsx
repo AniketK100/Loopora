@@ -16,6 +16,7 @@ import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
 import { auth } from "@/auth";
+import { User } from "@/lib/db/models/User";
 import { QuestionDetailContainer } from "./QuestionDetailContainer";
 
 export const revalidate = 3600; // Revalidate every hour (ISR)
@@ -75,6 +76,22 @@ export default async function QuestionDetailPage({ params }: QuestionDetailPageP
   const userHasPremium =
     user ? user.role === "admin" || user.role === "editor" || !!user.isPremium : false;
 
+  // Retrieve initial favorited and practiced state for authenticated user
+  let initialIsFavorited = false;
+  let initialIsPracticed = false;
+
+  if (user) {
+    const userDoc = await User.findById(user.id).select("bookmarks practiced");
+    if (userDoc) {
+      initialIsFavorited = userDoc.bookmarks.some(
+        (bId) => bId.toString() === questionDoc._id.toString()
+      );
+      initialIsPracticed = userDoc.practiced.some(
+        (pId) => pId.toString() === questionDoc._id.toString()
+      );
+    }
+  }
+
   // Serialize Question Data
   const questionData = {
     _id: questionDoc._id.toString(),
@@ -118,6 +135,8 @@ export default async function QuestionDetailPage({ params }: QuestionDetailPageP
           categoryName={categoryDoc.name}
           question={questionData}
           userHasPremium={userHasPremium}
+          initialIsFavorited={initialIsFavorited}
+          initialIsPracticed={initialIsPracticed}
         />
       </div>
     </div>

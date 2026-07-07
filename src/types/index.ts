@@ -110,6 +110,8 @@ export interface Question {
 export interface QuestionListItem {
   _id: string;
   category: string;
+  categorySlug?: string;
+  categoryName?: string;
   slug: string;
   question: string;
   answer: { short?: string };

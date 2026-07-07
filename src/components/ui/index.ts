@@ -33,3 +33,7 @@ export { Toggle } from "./Toggle";
 export type { ToggleProps } from "./Toggle";
 
 export { CookieConsent } from "./CookieConsent";
+
+export { FavoriteToggle } from "./FavoriteToggle";
+
+export { PracticedToggle } from "./PracticedToggle";

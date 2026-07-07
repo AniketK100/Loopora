@@ -14,7 +14,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Card, Button, Badge } from "@/components/ui";
+import { Card, Button, Badge, FavoriteToggle, PracticedToggle } from "@/components/ui";
 import { trackEvent } from "@/lib/analytics";
 
 interface VideoData {
@@ -43,12 +43,16 @@ interface QuestionDetailContainerProps {
   categoryName: string;
   question: QuestionData;
   userHasPremium: boolean;
+  initialIsFavorited?: boolean;
+  initialIsPracticed?: boolean;
 }
 
 export function QuestionDetailContainer({
   categoryName,
   question,
   userHasPremium,
+  initialIsFavorited = false,
+  initialIsPracticed = false,
 }: QuestionDetailContainerProps) {
   // Paywall check: premium questions are locked if user does not have premium status
   const isLocked = question.isPremium && !userHasPremium;
@@ -166,12 +170,18 @@ export function QuestionDetailContainer({
           </span>
         </div>
 
-        <h2
-          className="text-2xl md:text-3xl font-bold text-[var(--color-fg)] mb-4"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          {question.question}
-        </h2>
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <h2
+            className="text-2xl md:text-3xl font-bold text-[var(--color-fg)] flex-1"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            {question.question}
+          </h2>
+          <div className="flex items-center gap-2 shrink-0">
+            <FavoriteToggle questionId={question._id} initialIsFavorited={initialIsFavorited} />
+            <PracticedToggle questionId={question._id} initialIsPracticed={initialIsPracticed} />
+          </div>
+        </div>
 
         {question.answer.short && (
           <div className="bg-[var(--color-bg-alt)]/40 p-4 border-2 border-dashed border-[var(--color-border-light)] wobbly-sm mb-6">
