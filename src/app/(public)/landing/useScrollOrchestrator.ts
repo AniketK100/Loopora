@@ -40,7 +40,7 @@ interface OrchestratorState {
 export function useScrollOrchestrator(): OrchestratorState {
   const rootRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
-  const [poweredOn, setPoweredOn] = useState(false);
+  const [poweredOn, setPoweredOn] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [stations, setStations] = useState<StationProgress>({
     search: 0,
@@ -102,14 +102,23 @@ export function useScrollOrchestrator(): OrchestratorState {
         },
       });
 
-      // Main scroll progress tracker
+      // Main scroll progress tracker.
+      // Coarsen progress to 5% buckets before touching React state so the
+      // entire landing tree (hero + 4 stations + final scene) does NOT
+      // re-render on every animation frame. Stations only key off
+      // threshold crossings (0.15, 0.28, 0.45, ...), so 5% granularity is
+      // visually identical while cutting renders from ~60/s to a handful.
+      let lastBucket = -1;
+      let lastStationsKey = "";
       ScrollTrigger.create({
         trigger: root,
         start: "top top",
         end: "bottom bottom",
         onUpdate: (self) => {
           const p = self.progress;
-          setProgress(p);
+          const bucket = Math.round(p * 20) / 20; // 0, 0.05, 0.10, ...
+          if (bucket === lastBucket) return;
+          lastBucket = bucket;
 
           const newStations = {} as StationProgress;
           for (const range of stationRanges) {
@@ -121,6 +130,19 @@ export function useScrollOrchestrator(): OrchestratorState {
               newStations[range.key] = (p - range.start) / (range.end - range.start);
             }
           }
+
+          // Only setState when the per-station thresholds (rounded to 5%)
+          // actually change — this is what the components react to.
+          const stationsKey = [
+            Math.round(newStations.search * 20),
+            Math.round(newStations.star * 20),
+            Math.round(newStations.bookmarks * 20),
+            Math.round(newStations.community * 20),
+          ].join(",");
+          if (stationsKey === lastStationsKey) return;
+          lastStationsKey = stationsKey;
+
+          setProgress(bucket);
           setStations(newStations);
         },
       });

@@ -73,7 +73,7 @@ export function NotebookAsset({ isOpen = false, className = "", style, children 
       ) : (
         /* OPENED LINED PAPER NOTEBOOK STATE */
         <div
-          className="relative w-[520px] aspect-[4/3] bg-[#faf8f5] border-2 border-[#e6e2da] p-8 shadow-[0_15px_35px_rgba(0,0,0,0.5)] flex flex-col"
+          className="relative w-full aspect-[3/2] bg-[#faf8f5] border-2 border-[#e6e2da] p-6 shadow-[0_10px_35px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] flex flex-col"
           style={{
             backgroundImage: "radial-gradient(circle, #e6e2da 0.8px, transparent 0.8px)",
             backgroundSize: "24px 24px",
@@ -93,7 +93,7 @@ export function NotebookAsset({ isOpen = false, className = "", style, children 
           </div>
 
           {/* Child contents in the center */}
-          <div className="w-full h-full pl-8 pt-4 flex flex-col relative z-10">
+          <div className="w-full h-full pl-8 pr-9 pt-5 flex flex-col relative z-10">
             {children}
           </div>
         </div>

@@ -19,20 +19,37 @@ import { FinalScene } from "./landing/FinalScene";
 interface PremiumLandingPageProps {
   totalQuestions: number;
   totalCategories: number;
+  session?: {
+    user?: {
+      name?: string | null;
+      email?: string | null;
+      role?: string | null;
+    } | null;
+  } | null;
 }
 
-export function PremiumLandingPage({ totalQuestions, totalCategories }: PremiumLandingPageProps) {
+/**
+ * CustomCursor — themed cursor style.
+ * Trailing ring effect removed per user request; native cursor styled via CSS to match the warm-dark theme.
+ */
+function CustomCursor() {
+  return null;
+}
+
+export function PremiumLandingPage({ totalQuestions, totalCategories, session }: PremiumLandingPageProps) {
   const {
     progress,
     stations,
     reducedMotion,
     poweredOn,
-    powerOn,
     rootRef,
   } = useScrollOrchestrator();
 
   return (
     <div ref={rootRef} className="premium-landing">
+      {/* Custom Sleek Mouse Cursor */}
+      <CustomCursor />
+
       {/* Serpentine copper cable system overlay */}
       <CableSystem
         poweredOn={poweredOn}
@@ -42,10 +59,10 @@ export function PremiumLandingPage({ totalQuestions, totalCategories }: PremiumL
       {/* Hero: The Desk & Power Switch */}
       <LandingHero
         poweredOn={poweredOn}
-        onPowerOn={powerOn}
         reducedMotion={reducedMotion}
         totalQuestions={totalQuestions}
         totalCategories={totalCategories}
+        session={session}
       />
 
       {/* Feature Station 1: Workspace Shelf (Search & Company Questions) */}

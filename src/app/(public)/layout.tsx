@@ -40,25 +40,47 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
     <LenisProvider>
       <ImpersonationBanner />
       <div className="flex flex-col min-h-screen bg-[var(--color-bg)]">
-        <header className="border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] sticky top-0 z-50">
+        <header className={`border-b-2 sticky top-0 z-50 transition-colors duration-300 ${
+          isHomeRoute 
+            ? "border-neutral-900 bg-[#110f0d]/95 backdrop-blur-sm" 
+            : "border-[var(--color-border)] bg-[var(--color-bg)]"
+        }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <span
                 className="text-2xl font-bold hover:rotate-2 transition-transform cursor-pointer"
-                style={{ fontFamily: "var(--font-heading)", color: "var(--color-fg)" }}
+                style={{ 
+                  fontFamily: "var(--font-heading)", 
+                  color: isHomeRoute ? "#f0e6d6" : "var(--color-fg)" 
+                }}
               >
                 Loopora
               </span>
             </Link>
 
             <nav className="hidden md:flex items-center space-x-6 font-[family-name:var(--font-heading)] font-bold text-lg">
-              <Link href="/interview" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+              <Link 
+                href="/interview" 
+                className={`transition-colors ${
+                  isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg)] hover:text-[var(--color-accent)]"
+                }`}
+              >
                 Library
               </Link>
-              <Link href="/search" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+              <Link 
+                href="/search" 
+                className={`transition-colors ${
+                  isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg)] hover:text-[var(--color-accent)]"
+                }`}
+              >
                 Search
               </Link>
-              <Link href="/suggest" className="text-[var(--color-fg)] hover:text-[var(--color-accent)] transition-colors">
+              <Link 
+                href="/suggest" 
+                className={`transition-colors ${
+                  isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg)] hover:text-[var(--color-accent)]"
+                }`}
+              >
                 Suggest Q&A
               </Link>
             </nav>
@@ -68,7 +90,9 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
                 <div className="flex items-center gap-3">
                   <Link
                     href="/profile"
-                    className="text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] transition-colors font-[family-name:var(--font-body)] hidden sm:inline"
+                    className={`text-sm transition-colors font-[family-name:var(--font-body)] hidden sm:inline ${
+                      isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg-muted)] hover:text-[var(--color-accent)]"
+                    }`}
                   >
                     Hi, {user.name}
                   </Link>
@@ -76,7 +100,11 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
                   {(user.role === "admin" || user.role === "editor") && (
                     <Link
                       href="/admin"
-                      className="px-3 py-1.5 text-sm bg-[var(--color-accent)] text-[var(--color-bg)] wobbly-sm border-2 border-[var(--color-border)] hover:translate-y-[-1px] transition-transform"
+                      className={`px-3 py-1.5 text-sm wobbly-sm border-2 hover:translate-y-[-1px] transition-transform ${
+                        isHomeRoute 
+                          ? "bg-amber-600 text-black border-neutral-900" 
+                          : "bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-border)]"
+                      }`}
                     >
                       Admin
                     </Link>
@@ -88,13 +116,21 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
                 <div className="flex items-center gap-3">
                   <Link
                     href="/login"
-                    className="px-3 py-1.5 text-sm border-2 border-[var(--color-border)] wobbly-sm hover:bg-[var(--color-bg-alt)] transition-colors"
+                    className={`px-3 py-1.5 text-sm border-2 wobbly-sm transition-colors ${
+                      isHomeRoute 
+                        ? "border-neutral-800 text-[#f0e6d6] hover:bg-neutral-900" 
+                        : "border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]"
+                    }`}
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/signup"
-                    className="px-3 py-1.5 text-sm bg-[var(--color-secondary)] text-[var(--color-bg)] wobbly-sm border-2 border-[var(--color-border)] hover:translate-y-[-1px] transition-transform"
+                    className={`px-3 py-1.5 text-sm wobbly-sm border-2 hover:translate-y-[-1px] transition-transform ${
+                      isHomeRoute 
+                        ? "bg-amber-500 text-black border-neutral-900" 
+                        : "bg-[var(--color-secondary)] text-[var(--color-bg)] border-[var(--color-border)]"
+                    }`}
                   >
                     Sign Up
                   </Link>

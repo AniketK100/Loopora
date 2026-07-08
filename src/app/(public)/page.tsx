@@ -1,6 +1,7 @@
 import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
 import { connectDB } from "@/lib/db/connection";
+import { auth } from "@/auth";
 import { PremiumLandingPage } from "./PremiumLandingPage";
 
 export const metadata = {
@@ -45,7 +46,10 @@ async function getLandingCounts() {
 }
 
 export default async function PublicHomePage() {
-  const counts = await getLandingCounts();
+  const [counts, session] = await Promise.all([
+    getLandingCounts(),
+    auth()
+  ]);
 
-  return <PremiumLandingPage {...counts} />;
+  return <PremiumLandingPage {...counts} session={session} />;
 }

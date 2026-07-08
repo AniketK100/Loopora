@@ -1,9 +1,7 @@
 /**
  * StationSearch — "The Workspace Shelf"
  * 
- * Camera pans down-left to a wood shelf.
- * A developer laptop rests on it, powered on by the cable.
- * Search queries type out automatically, showing real interview question results.
+ * Scaled up elements and margins to look premium, clear, and high-fidelity.
  */
 
 "use client";
@@ -51,20 +49,21 @@ export function StationSearch({ progress, reducedMotion }: StationSearchProps) {
       className={`station station-search relative ${isActive ? "active" : ""}`}
       aria-label="Workspace Search Shelf Station"
     >
-      <div className="station-inner relative z-10">
-        {/* Layer 1: Shelf Background & Environment */}
-        <div className="relative w-full max-w-[500px]">
+      <div className="station-inner relative z-10 flex flex-col md:flex-row items-center justify-between gap-12 max-w-[1350px] w-full px-6">
+        
+        {/* Layer 1: Shelf Background & Environment (Scaled Up) */}
+        <div className="relative w-full max-w-[760px] transition-all duration-1000">
           <Shelf>
             {/* Layer 3: Foreground Laptop sitting on shelf */}
             <Laptop isOn={isActive} className="w-full">
-              <div className="flex flex-col gap-3 p-4 h-full">
+              <div className="flex flex-col gap-3.5 p-5 h-full text-left">
                 {/* Search field mock */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#12100d] border border-[#d4a052]/20 rounded-md">
-                  <Search size={14} className="text-amber-500/80" />
-                  <span className="text-xs text-[#f0e6d6] font-mono">
+                <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#12100d] border border-[#d4a052]/20 rounded-md">
+                  <Search size={16} className="text-amber-500/80" />
+                  <span className="text-sm text-[#f0e6d6] font-mono">
                     {reducedMotion ? "scalable real-time app" : typedText}
                   </span>
-                  <span className="w-1.5 h-3.5 bg-amber-500 animate-pulse" />
+                  <span className="w-1.5 h-4 bg-amber-500 animate-pulse" />
                 </div>
 
                 {/* Results listing */}
@@ -76,17 +75,17 @@ export function StationSearch({ progress, reducedMotion }: StationSearchProps) {
                   {searchResults.map((res, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2 bg-neutral-900/60 border border-neutral-800 hover:border-amber-500/30 rounded transition-all duration-300 hover:translate-x-1"
+                      className="flex items-center justify-between p-3 bg-neutral-900/60 border border-neutral-800 hover:border-amber-500/30 rounded transition-all duration-300 hover:translate-x-1"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[0.62rem] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${res.badgeClass}`}>
+                      <div className="flex items-center gap-2.5">
+                        <span className={`text-[0.65rem] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${res.badgeClass}`}>
                           {res.badge}
                         </span>
-                        <span className="text-xs text-[#faf8f5]/90 truncate max-w-[180px]">
+                        <span className="text-xs text-[#faf8f5]/90 truncate max-w-[200px]">
                           {res.title}
                         </span>
                       </div>
-                      <span className="text-[0.62rem] text-neutral-500 uppercase">{res.difficulty}</span>
+                      <span className="text-[0.65rem] text-neutral-500 uppercase font-bold">{res.difficulty}</span>
                     </div>
                   ))}
                 </div>
@@ -96,7 +95,7 @@ export function StationSearch({ progress, reducedMotion }: StationSearchProps) {
         </div>
 
         {/* Text descriptions */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 flex-1 text-left">
           <p className="station-eyebrow">Search Intelligence</p>
           <h2 className="station-title">Find clarity. Avoid the search noise.</h2>
           <p className="station-body">
@@ -104,6 +103,7 @@ export function StationSearch({ progress, reducedMotion }: StationSearchProps) {
             and common pitfalls. Every folder acts as a targeted study track.
           </p>
         </div>
+
       </div>
     </section>
   );
