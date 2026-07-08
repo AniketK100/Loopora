@@ -1,111 +1,71 @@
 # InterviewLoop — Architecture Guide
 
 > Living document. Updated as each phase progresses.
-> Last updated: Phase 0 (Project Setup)
+> Last updated: Phase 11 (AI Personalization)
 
 ---
 
 ## 1. Project Overview
 
-**InterviewLoop** is an SEO-optimized interview preparation SaaS platform built with Next.js (App Router), MongoDB, and a hand-drawn design system. Users browse interview categories, expand questions to see written model answers and embedded video explanations, and switch between multiple video sources per question.
+**InterviewLoop** is an SEO-optimized interview preparation SaaS platform built with Next.js (App Router), MongoDB, and a hand-drawn design system. Users browse interview categories, expand questions to see written model answers and embedded video explanations, switch between multiple video sources per question, upload resumes for AI-powered personalization, and receive tailored interview answers from Gemini.
 
 ### Key Technical Decisions
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Framework | Next.js 15 (App Router) | SSR/SSG/ISR for SEO; file-based routing; React Server Components |
+| Framework | Next.js 16 (App Router) | SSR/SSG/ISR for SEO; file-based routing; React Server Components |
 | Rendering | ISR (revalidate: 3600) | Static-fast for visitors, fresh after admin edits |
 | Styling | Tailwind CSS v4 + CSS custom properties | Design tokens as CSS vars consumed by Tailwind |
 | Database | MongoDB Atlas + Mongoose | Document model fits Q&A nesting; team familiarity |
-| Auth | NextAuth.js (Credentials + Google OAuth) | JWT sessions, HttpOnly cookies, RBAC middleware |
+| Auth | NextAuth.js v5 (Credentials + Google OAuth) | JWT sessions, HttpOnly cookies, RBAC middleware |
+| AI | Google Gemini (via @google/genai) | Resume analysis + personalized answer generation |
 | Video | External embeds only (YouTube/Vimeo/Loom/Drive/mp4) | Zero storage cost; lazy-loaded iframes for performance |
 | Images | Cloudinary + next/image | CDN-optimized thumbnails and OG images |
-| Motion | Framer Motion | Scroll reveals, layout animations, shared transitions |
+| Motion | GSAP + Lenis (landing), Framer Motion (admin UI) | Scroll-triggered animations, smooth scrolling |
 | Validation | Zod | Schema validation on all API routes |
 | Icons | lucide-react (strokeWidth: 2.5) | Consistent line-art style matching hand-drawn aesthetic |
 
 ---
 
-## 2. Folder Structure
+## 2. Architecture Overview
 
 ```
-interviewloop/
-├── src/
-│   ├── app/                           # Next.js App Router
-│   │   ├── (public)/                  # Route group: public pages
-│   │   │   ├── interview/             # Category + question pages
-│   │   │   ├── search/                # Search results
-│   │   │   ├── login/                 # Auth pages
-│   │   │   ├── signup/
-│   │   │   └── ...
-│   │   ├── (admin)/admin/             # Route group: admin dashboard
-│   │   │   ├── categories/            # Category CRUD
-│   │   │   ├── questions/             # Question CRUD
-│   │   │   ├── flags/                 # Feature flags
-│   │   │   ├── users/                 # User management
-│   │   │   ├── audit-log/             # Audit log viewer
-│   │   │   └── layout.tsx             # Admin shell (sidebar, nav)
-│   │   ├── api/                       # API routes
-│   │   │   ├── auth/                  # NextAuth endpoints
-│   │   │   ├── categories/            # Category CRUD API
-│   │   │   ├── questions/             # Question CRUD API
-│   │   │   ├── search/                # Search API
-│   │   │   ├── suggestions/           # Public suggestion form
-│   │   │   ├── flags/                 # Feature flag API
-│   │   │   └── health/                # Health check
-│   │   ├── globals.css                # Design tokens + global styles
-│   │   ├── layout.tsx                 # Root layout (fonts, metadata)
-│   │   └── page.tsx                   # Landing page
-│   │
-│   ├── components/                    # React components
-│   │   ├── ui/                        # Base design system (Button, Card, Input, Badge, Accordion)
-│   │   ├── layout/                    # Header, Footer, Sidebar
-│   │   ├── question/                  # QuestionAccordion, VideoPlayer, VideoSwitcher
-│   │   ├── category/                  # CategoryCard, CategoryGrid
-│   │   ├── admin/                     # Admin-specific components
-│   │   └── shared/                    # Shared utilities (SEO, Analytics wrapper)
-│   │
-│   ├── lib/                           # Server-side utilities
-│   │   ├── db/                        # MongoDB connection + models
-│   │   │   ├── connection.ts          # Singleton connection manager
-│   │   │   ├── index.ts               # Barrel export
-│   │   │   └── models/               # Mongoose models (Phase 2)
-│   │   ├── auth/                      # Auth config + RBAC middleware (Phase 3)
-│   │   ├── validators/                # Zod schemas (Phase 2)
-│   │   ├── embed/                     # Video URL normalization + allowlist (Phase 2)
-│   │   ├── analytics/                 # Abstract analytics layer (Phase 10)
-│   │   └── utils/                     # General utilities
-│   │
-│   ├── styles/                        # Additional style modules (if needed)
-│   │
-│   └── types/                         # TypeScript type definitions
-│       └── index.ts                   # Core types mirroring Mongoose schemas
-│
-├── scripts/                           # Seed scripts, migrations
-│   └── seed.ts                        # Database seed script (Phase 2)
-│
-├── public/                            # Static assets
-│   ├── images/                        # Category icons, OG images
-│   └── fonts/                         # (next/font handles this, but fallback location)
-│
-├── .env.example                       # Environment variable template
-├── .env.local                         # Local dev env (gitignored)
-├── .prettierrc                        # Prettier configuration
-├── eslint.config.mjs                  # ESLint configuration
-├── next.config.ts                     # Next.js configuration
-├── package.json                       # Dependencies + scripts
-└── tsconfig.json                      # TypeScript configuration
+User Browser
+    │
+    ▼
+Next.js App Router (SSR/ISR)
+    │
+    ├── Server Components → Direct DB queries via Mongoose
+    │
+    ├── API Routes (/api/*) → Zod validation → Mongoose → MongoDB Atlas
+    │
+    ├── AI Layer (/api/resume/upload, /api/interview/*/personalized)
+    │   → Gemini API → Resume + PersonalizedAnswer caching
+    │
+    └── Client Components → fetch() to API routes (for mutations)
 ```
+
+### Key Patterns
+- **Read path (public)**: Server Components query MongoDB directly — no API round-trip needed
+- **Write path (admin)**: Client-side forms → API routes → Zod validation → Mongoose → audit log
+- **ISR**: Category and question pages use Incremental Static Regeneration (revalidate: 3600s)
+- **AI pipeline**: Resume upload → multi-layer security validation → Gemini analysis → cached results
+
+---
+
+## 3. Folder Structure
+
+See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for the complete file tree.
 
 ### Route Groups
 
 The `(public)` and `(admin)` route groups serve two purposes:
-1. **Code splitting**: Admin JS bundle is completely separate from the public bundle, so admin dashboard code is never shipped to public visitors.
-2. **Layout isolation**: Admin pages use a different layout (sidebar nav, calmer visual variant) without affecting public pages.
+1. **Code splitting**: Admin JS bundle is completely separate from the public bundle
+2. **Layout isolation**: Admin pages use a different layout without affecting public pages
 
 ---
 
-## 3. Design Token System
+## 4. Design Token System
 
 All visual styling flows through CSS custom properties defined in `globals.css`:
 
@@ -121,87 +81,100 @@ All visual styling flows through CSS custom properties defined in `globals.css`:
 | `--shadow-emphasized` | `8px 8px 0px 0px #2d2d2d` | Expanded card shadows |
 | `--radius-wobbly` | `255px 15px 225px 15px / ...` | Hand-drawn border radius |
 
-Fonts are self-hosted via `next/font` (no external requests):
+Fonts are self-hosted via `next/font`:
 - **Kalam**: Headings, hero text, badges
 - **Patrick Hand**: Body text, question text, UI labels
 
 ---
 
-## 4. Data Flow
+## 5. AI Architecture
+
+### Provider Abstraction
 
 ```
-User Browser
-    │
-    ▼
-Next.js App Router (SSR/ISR)
-    │
-    ├── Server Components → Direct DB queries via Mongoose
-    │
-    ├── API Routes (/api/*) → Zod validation → Mongoose → MongoDB Atlas
-    │
-    └── Client Components → fetch() to API routes (for mutations)
+lib/ai/types.ts        → AIService interface
+lib/ai/gemini.ts       → GeminiService implementation (GoogleGenAI SDK)
+lib/ai/provider.ts     → Singleton provider selector
 ```
 
-### Key Patterns
-- **Read path (public)**: Server Components query MongoDB directly — no API round-trip needed
-- **Write path (admin)**: Client-side forms → API routes → Zod validation → Mongoose → audit log
-- **ISR**: Category and question pages use Incremental Static Regeneration (revalidate: 3600s), with on-demand revalidation triggered by admin publish actions
+### Resume Pipeline
+
+1. User uploads file → `POST /api/resume/upload`
+2. Multi-layer validation: magic bytes → MIME → extension → size (5MB) → pages (8)
+3. Text extraction: PDF via `pdf-parse`, DOCX via `mammoth`, images via Gemini
+4. SHA-256 hashing → duplicate detection via `contentHash`
+5. Cache hit: return existing `ResumeAnalysis`
+6. Cache miss: call Gemini → persist `Resume` + `ResumeAnalysis`
+
+### Personalized Answers
+
+1. User selects up to 2 folders for personalization
+2. `GET /api/interview/[folder]/personalized?resumeId=...`
+3. Checks `PersonalizedAnswer` cache per (user, question, resumeHash)
+4. Cache miss: Gemini generates answer with resume context
+5. Falls back to sample answer on AI failure
+6. Free users: top 10 questions; Premium: all questions
 
 ---
 
-## 5. Security Architecture
+## 6. Security Architecture
 
-| Layer | Implementation | Phase |
-|---|---|---|
-| Auth | NextAuth.js JWT, HttpOnly/Secure/SameSite cookies | 3 |
-| RBAC | `requireRole()` middleware on all admin routes + mutating APIs | 3 |
-| Input validation | Zod schemas on every API route | 2 |
-| XSS prevention | `sanitize-html` allowlist on rich-text before storage | 8 |
-| Embed safety | URL normalization to strict templates; reject unknown patterns | 2 |
-| Rate limiting | IP-based on auth + public write endpoints | 3 |
-| CSP | `frame-src` restricted to embed provider allowlist | 8 |
-| CSRF | SameSite cookies + explicit tokens on admin forms | 8 |
+| Layer | Implementation |
+|---|---|
+| Auth | NextAuth.js JWT, HttpOnly/Secure/SameSite cookies |
+| RBAC | `requireRole()` middleware on admin routes + mutating APIs |
+| Input validation | Zod schemas on every API route |
+| XSS prevention | `sanitize-html` allowlist before storage |
+| Embed safety | URL normalization to strict templates; reject unknown patterns |
+| Resume validation | Magic bytes + MIME + extension + size (5MB) + pages (8) |
+| Duplicate detection | SHA-256 content hash dedup |
+| Macro detection | DOCX vbaProject.bin scan |
+| Rate limiting | IP-based on auth + public write endpoints |
+| CSP | `frame-src` restricted to embed provider allowlist |
+| CSRF | SameSite cookies + explicit tokens on admin forms |
 
 ---
 
-## 6. Dependencies
+## 7. Dependencies
 
 ### Production
-| Package | Version | Purpose |
-|---|---|---|
-| `next` | 16.x | Framework |
-| `react` / `react-dom` | 19.x | UI library |
-| `mongoose` | latest | MongoDB ODM |
-| `next-auth` | beta (v5) | Authentication |
-| `bcryptjs` | latest | Password hashing |
-| `zod` | latest | Schema validation |
-| `framer-motion` | latest | Animations |
-| `lucide-react` | latest | Icons |
-| `sanitize-html` | latest | XSS prevention |
+| Package | Purpose |
+|---|---|
+| `next` 16.x / `react` 19.x / `react-dom` 19.x | Framework |
+| `mongoose` | MongoDB ODM |
+| `next-auth` v5 (beta) | Authentication |
+| `@google/genai` | Gemini AI SDK |
+| `bcryptjs` | Password hashing |
+| `zod` | Schema validation |
+| `gsap` + `lenis` + `framer-motion` | Animations |
+| `lucide-react` | Icons |
+| `sanitize-html` | XSS prevention |
+| `pdf-parse` + `mammoth` | Resume text extraction |
 
 ### Development
-| Package | Version | Purpose |
-|---|---|---|
-| `typescript` | ^5 | Type checking |
-| `tailwindcss` | ^4 | Styling |
-| `eslint` + `eslint-config-next` | latest | Linting |
-| `prettier` + `eslint-config-prettier` | latest | Formatting |
-| `tsx` | latest | Run TypeScript scripts (seed, etc.) |
+| Package | Purpose |
+|---|---|
+| `typescript` ^5 | Type checking |
+| `tailwindcss` ^4 + `@tailwindcss/postcss` | Styling |
+| `eslint` + `eslint-config-next` | Linting |
+| `prettier` + `eslint-config-prettier` | Formatting |
+| `tsx` | TypeScript execution |
 
 ---
 
-## 7. Phase Status
+## 8. Phase Status
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Project Setup | ✅ Complete | Fonts, DB connection, health-check, config |
-| 1 — Design Tokens & Components | ✅ Complete | Wobbly borders, hand-drawn design tokens, layout utility, UI components (Button, Card, Input, Select, Badge, RankTab, Accordion, Toggle), and showcase page |
-| 2 — Data Layer & Schema | ✅ Complete | Mongoose models (User, Category, Question, FeatureFlag, AuditLog, Suggestion), seed script (seed.ts), Zod schemas, HTML sanitization, video URL normalization, and CRUD API endpoints built and verified against MongoDB Atlas. |
-| 3 — Auth & RBAC | ✅ Complete | NextAuth.js v5 (auth.js) configured with Credentials and Google OAuth fallback, Edge middleware routing guards, requireRole server utility, credentials login & registration routes, and database-backed IP rate limiter (10 req/min/IP). |
-| 4 — Admin Dashboard | ✅ Complete | Side navigation shell, Category CRUD (CategoryForm, DeleteCategoryButton, cascaded deletes), Question CRUD (QuestionForm, DeleteQuestionButton, inline video manager, live status validation), Feature Flag manager (FlagToggle, auto-seeding), Audit Logs read viewer, and Bulk Import console. |
-| 5 — Public Pages | 🔲 Not started | |
-| 6 — Content Seeding | 🔲 Not started | Decoupled from engineering |
-| 7 — SEO Layer | 🔲 Not started | |
-| 8 — Security Hardening | 🔲 Not started | |
-| 9 — Performance & A11y | 🔲 Not started | |
-| 10 — Launch Readiness | 🔲 Not started | |
+| 1 — Design Tokens & Components | ✅ Complete | Wobbly borders, UI components, showcase |
+| 2 — Data Layer & Schema | ✅ Complete | Mongoose models, seed script, Zod schemas, CRUD APIs |
+| 3 — Auth & RBAC | ✅ Complete | NextAuth.js v5, middleware guards, rate limiting |
+| 4 — Admin Dashboard | ✅ Complete | Category/Question CRUD, flags, audit logs, bulk import |
+| 5 — Public Pages | ✅ Complete | Landing page, categories, Q&A detail, search |
+| 6 — Content Seeding | ✅ Complete | 50+ questions per category |
+| 7 — SEO Layer | ✅ Complete | JSON-LD, sitemap, OG tags |
+| 8 — Security Hardening | ✅ Complete | CSP, sanitization, audit |
+| 9 — Performance & A11y | ✅ Complete | Lighthouse, keyboard nav, WCAG |
+| 10 — Launch Readiness | ✅ Complete | Legal pages, analytics, monitoring |
+| 11 — AI Personalization | ✅ Complete | Gemini integration, resume upload, personalized answers |

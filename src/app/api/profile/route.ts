@@ -16,7 +16,6 @@ import { connectDB } from "@/lib/db/connection";
 import { User } from "@/lib/db/models/User";
 import { Session } from "@/lib/db/models/Session";
 import { AuditLog } from "@/lib/db/models/AuditLog";
-import { ApiResponse } from "@/types";
 
 const profileUpdateSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name cannot exceed 50 characters").trim(),
@@ -42,12 +41,32 @@ export async function GET() {
       );
     }
 
-    const response: ApiResponse<typeof user> = {
-      success: true,
-      data: user,
+    // Retrieve active resume and parsed analysis summary
+    const { Resume } = await import("@/lib/db/models/Resume");
+    const { ResumeAnalysis } = await import("@/lib/db/models/ResumeAnalysis");
+    const latestResume = await Resume.findOne({ user: user._id }).sort({ createdAt: -1 });
+    let resumeAnalysis = null;
+    if (latestResume) {
+      resumeAnalysis = await ResumeAnalysis.findOne({ contentHash: latestResume.contentHash });
+    }
+
+    const dataPayload = {
+      ...user.toObject(),
+      latestResume: latestResume ? {
+        _id: latestResume._id,
+        originalFilename: latestResume.originalFilename,
+        mimeTypeSniffed: latestResume.mimeTypeSniffed,
+        pageCount: latestResume.pageCount,
+        createdAt: latestResume.createdAt,
+      } : null,
+      resumeAnalysis: resumeAnalysis ? {
+        detectedRole: resumeAnalysis.summary?.detectedRole || "Not analyzed",
+        skills: resumeAnalysis.summary?.skills || [],
+        yearsExperience: resumeAnalysis.summary?.yearsExperience || 0,
+      } : null,
     };
 
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json({ success: true, data: dataPayload }, { status: 200 });
   } catch (error) {
     console.error("[Profile GET API] Error fetching profile:", error);
     return NextResponse.json(

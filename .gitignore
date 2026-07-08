@@ -16,6 +16,7 @@
 /.next/
 /out/
 /build
+/dist
 
 # --- Environment variables ---------------------------------------------------
 # NEVER commit secrets. Only .env.example is tracked.

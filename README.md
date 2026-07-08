@@ -43,9 +43,11 @@ Loopora is an **SEO-optimized interview preparation SaaS** where candidates can:
 | ⚡ **ISR + SSR** | Incremental Static Regeneration for fast page loads with always-fresh content |
 | 🔍 **Full-Text Search** | Search across questions, answers, and tags instantly |
 | 🛡️ **Admin CMS** | Full content management with bulk import, feature flags, and audit logging |
+| 🧠 **AI Resume Personalization** | Upload your resume; Gemini AI generates tailored answers using your background |
+| 📄 **Resume Upload** | Secure multi-layer validation: magic bytes, MIME, extension, 5MB limit, 8-page cap, macro detection |
 | 📊 **SEO-First** | FAQPage JSON-LD, dynamic sitemap, OG cards, semantic HTML |
 | ♿ **Accessible** | WCAG 2.1 AA — keyboard-navigable, screen-reader friendly, reduced-motion support |
-| 🔒 **Secure** | RBAC, input sanitization, embed URL allowlisting, rate limiting, CSP headers |
+| 🔒 **Secure** | RBAC, input sanitization, embed URL allowlisting, rate limiting, CSP headers, SHA-256 dedup |
 
 ---
 
@@ -160,6 +162,7 @@ curl http://localhost:3000/api/health
 | `npm run format:check` | Check code formatting |
 | `npm run typecheck` | Run TypeScript type checking |
 | `npm run seed` | Seed database with sample data |
+| `npm run promote` | Promote user to admin/editor role |
 
 ---
 
@@ -191,6 +194,9 @@ See [docs/](docs/) for comprehensive documentation:
 | [GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) | Branch strategy, safe workflows |
 | [ROLLBACK.md](docs/ROLLBACK.md) | Recovery procedures, emergency checklist |
 | [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | Complete file tree |
+| [API.md](docs/API.md) | API route reference |
+| [AI.md](docs/AI.md) | Gemini integration, resume parsing, personalized answers |
+| [SECURITY.md](docs/SECURITY.md) | Security features and validation |
 | [DEPENDENCIES.md](docs/DEPENDENCIES.md) | Package inventory and scripts |
 
 ---
@@ -210,6 +216,7 @@ See [docs/](docs/) for comprehensive documentation:
 | 8 — Security Hardening | ✅ | CSP, sanitization, audit |
 | 9 — Performance & A11y | ✅ | Lighthouse, keyboard nav, WCAG |
 | 10 — Launch Readiness | ✅ | Legal pages, analytics, monitoring |
+| 11 — AI Personalization | ✅ | Gemini integration, resume upload, personalized answers |
 
 ---
 
@@ -222,6 +229,7 @@ Copy `.env.example` to `.env.local` for development. Required variables:
 | `MONGODB_URI` | ✅ | MongoDB Atlas connection string |
 | `NEXTAUTH_SECRET` | ✅ | JWT encryption secret |
 | `NEXTAUTH_URL` | ✅ | Canonical app URL |
+| `GEMINI_API_KEY` | ✅ | Google Gemini AI API key |
 | `GOOGLE_CLIENT_ID` | ❌ | Google OAuth (optional) |
 | `CLOUDINARY_API_KEY` | ❌ | Image CDN (optional) |
 

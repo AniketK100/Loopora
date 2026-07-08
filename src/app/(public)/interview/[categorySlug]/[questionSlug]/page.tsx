@@ -111,6 +111,7 @@ export default async function QuestionDetailPage({ params }: QuestionDetailPageP
     frequencyRank: questionDoc.frequencyRank,
     tags: questionDoc.tags || [],
     isPremium: questionDoc.isPremium,
+    category: questionDoc.category._id.toString(),
   };
 
   return (

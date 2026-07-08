@@ -77,6 +77,12 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
     difficulty: q.difficulty,
     isPremium: q.isPremium,
     tags: q.tags || [],
+    videos: (q.videos || []).map((v) => ({
+      label: v.label,
+      url: v.url,
+      provider: v.provider || "youtube",
+      order: v.order || 0,
+    })),
   }));
 
   const iconEmoji = getIconEmoji(categoryDoc.icon);

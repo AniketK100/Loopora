@@ -12,10 +12,11 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, Button, Badge, FavoriteToggle, PracticedToggle } from "@/components/ui";
 import { trackEvent } from "@/lib/analytics";
+import { getEmbedUrl } from "@/lib/video/getEmbedUrl";
 
 interface VideoData {
   label: string;
@@ -37,6 +38,7 @@ interface QuestionData {
   frequencyRank: number;
   tags: string[];
   isPremium: boolean;
+  category: string;
 }
 
 interface QuestionDetailContainerProps {
@@ -56,6 +58,59 @@ export function QuestionDetailContainer({
 }: QuestionDetailContainerProps) {
   // Paywall check: premium questions are locked if user does not have premium status
   const isLocked = question.isPremium && !userHasPremium;
+
+  // Personalization hooks
+  interface ResumeMetadata {
+    _id: string;
+    originalFilename: string;
+    mimeTypeSniffed: string;
+    pageCount: number;
+    createdAt: string;
+  }
+  interface PersonalizedQuestion {
+    questionId: string;
+    personalizedAnswer: string;
+  }
+
+  const [latestResume, setLatestResume] = useState<ResumeMetadata | null>(null);
+  const [personalizedAnswer, setPersonalizedAnswer] = useState<string | null>(null);
+  const [personalizationLoading, setPersonalizationLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadPersonalizedAnswer() {
+      try {
+        const profileRes = await fetch("/api/profile");
+        const profileJson = await profileRes.json();
+        if (profileJson.success && profileJson.data) {
+          const user = profileJson.data;
+          const resume = user.latestResume;
+          if (resume) {
+            setLatestResume(resume);
+            setPersonalizationLoading(true);
+            
+            const catId = question.category;
+            const catRes = await fetch(`/api/interview/${catId}/personalized?resumeId=${resume._id}`);
+            const catJson = await catRes.json();
+            
+            if (catRes.ok && catJson.success) {
+              const matched = catJson.questions.find((q: PersonalizedQuestion) => q.questionId === question._id);
+              if (matched) {
+                setPersonalizedAnswer(matched.personalizedAnswer);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load personalization:", err);
+      } finally {
+        setPersonalizationLoading(false);
+      }
+    }
+    
+    if (!isLocked) {
+      loadPersonalizedAnswer();
+    }
+  }, [question, isLocked]);
 
   // Video switcher state
   const hasVideos = question.videos && question.videos.length > 0;
@@ -99,51 +154,6 @@ export function QuestionDetailContainer({
       setIsSending(false);
     }
   };
-
-  // Helper to extract clean embed URL for iFrame views
-  function getEmbedUrl(url: string): { type: "iframe" | "video" | "unsupported"; src: string } {
-    if (!url) return { type: "unsupported", src: "" };
-    const cleanUrl = url.trim();
-
-    // YouTube matches
-    const ytMatch = cleanUrl.match(
-      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|||user\/.+\/)?(?:watch\?v=|&v=)?|youtu\.be\/)([^"&?\/\s]{11})/i
-    );
-    if (ytMatch && ytMatch[1]) {
-      return { type: "iframe", src: `https://www.youtube.com/embed/${ytMatch[1]}` };
-    }
-
-    // Vimeo matches
-    const vimeoMatch = cleanUrl.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)([0-9]+)/i);
-    if (vimeoMatch && vimeoMatch[1]) {
-      return { type: "iframe", src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
-    }
-
-    // Loom matches
-    const loomMatch = cleanUrl.match(/(?:loom\.com\/share\/|loom\.com\/embed\/)([a-f0-9]+)/i);
-    if (loomMatch && loomMatch[1]) {
-      return { type: "iframe", src: `https://www.loom.com/embed/${loomMatch[1]}` };
-    }
-
-    // Google Drive match
-    const driveMatch = cleanUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
-    if (driveMatch && driveMatch[1]) {
-      return { type: "iframe", src: `https://drive.google.com/file/d/${driveMatch[1]}/preview` };
-    }
-
-    // Instagram match
-    const instagramMatch = cleanUrl.match(/instagram\.com\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/i);
-    if (instagramMatch && instagramMatch[1]) {
-      return { type: "iframe", src: `https://www.instagram.com/p/${instagramMatch[1]}/embed` };
-    }
-
-    // Direct MP4 / Cloudinary match
-    if (/\.(mp4|webm|ogg)$/i.test(cleanUrl) || (cleanUrl.includes("res.cloudinary.com") && cleanUrl.includes("/video/upload/"))) {
-      return { type: "video", src: cleanUrl };
-    }
-
-    return { type: "unsupported", src: cleanUrl };
-  }
 
   const embedInfo = selectedVideo ? getEmbedUrl(selectedVideo.url) : null;
   const difficultyBadgeVariant = `difficulty-${question.difficulty}` as
@@ -224,6 +234,44 @@ export function QuestionDetailContainer({
                 dangerouslySetInnerHTML={{ __html: question.answer.detailed }}
               />
             </div>
+
+            {/* Personalized AI Explanation */}
+            {personalizationLoading && (
+              <div className="p-4 bg-[var(--color-bg-alt)]/25 border-2 border-dashed border-[var(--color-border-light)] wobbly-sm animate-pulse">
+                <span className="text-sm font-[family-name:var(--font-heading)] text-[var(--color-fg-muted)]">
+                  Tailoring solution to your resume background...
+                </span>
+              </div>
+            )}
+
+            {personalizedAnswer && (
+              <div className="border-2 border-[var(--color-border)] wobbly-sm p-6 bg-[#faf6ef] relative overflow-hidden" style={{ boxShadow: "var(--shadow-default)" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge variant="success">✓ Personalized to your resume</Badge>
+                  {latestResume && (
+                    <span className="text-xs text-[var(--color-fg-muted)] font-mono">
+                      Based on: {latestResume.originalFilename}
+                    </span>
+                  )}
+                </div>
+                <div
+                  className="text-base text-[var(--color-fg)] leading-relaxed space-y-3 font-[family-name:var(--font-body)]"
+                  dangerouslySetInnerHTML={{ __html: personalizedAnswer }}
+                />
+              </div>
+            )}
+
+            {latestResume && !personalizedAnswer && !personalizationLoading && !userHasPremium && (
+              <div className="border-2 border-dashed border-[var(--color-warning)] bg-amber-50/30 p-5 wobbly-sm text-sm text-[var(--color-fg-muted)]">
+                <div className="flex items-center gap-2 font-bold text-[var(--color-warning)] font-[family-name:var(--font-heading)]">
+                  <span>🔒</span>
+                  <span>AI Personalization Locked</span>
+                </div>
+                <p className="mt-1 font-[family-name:var(--font-body)]">
+                  Resume-personalized answers are capped at the top 10 questions for free candidate accounts. Upgrade to Premium to personalize all solutions in this folder!
+                </p>
+              </div>
+            )}
 
             {/* STAR Worked Narrative */}
             {question.answer.example && (

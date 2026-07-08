@@ -9,6 +9,7 @@
 | `react-dom` | 19.2.4 | React DOM rendering |
 | `next-auth` | ^5.0.0-beta.31 | Authentication (credentials + OAuth) |
 | `mongoose` | ^9.7.3 | MongoDB ODM |
+| `@google/genai` | ^2.10.0 | Google Gemini AI SDK |
 | `gsap` | ^3.15.0 | High-performance animations |
 | `lenis` | ^1.3.25 | Smooth scrolling |
 | `framer-motion` | ^12.42.2 | React motion library (admin UI) |
@@ -16,6 +17,8 @@
 | `zod` | ^4.4.3 | Schema validation |
 | `bcryptjs` | ^3.0.3 | Password hashing |
 | `sanitize-html` | ^2.17.5 | HTML sanitization |
+| `pdf-parse` | ^2.4.5 | PDF text extraction for resumes |
+| `mammoth` | ^1.12.0 | DOCX text extraction for resumes |
 
 ## Dev Dependencies
 
@@ -40,8 +43,10 @@
 
 - **GSAP + Lenis**: Lenis syncs with GSAP ScrollTrigger via `lenis.on("scroll", () => ScrollTrigger.update())`
 - **GSAP + React**: GSAP animations are triggered in `useEffect` hooks with cleanup via `.kill()`
-- **NextAuth + Mongoose**: Custom adapter using Mongoose models for session/user persistence
+- **NextAuth + Mongoose**: Custom session management using Mongoose models
 - **Tailwind v4**: Uses CSS-first configuration (no tailwind.config.js)
+- **Gemini AI**: Provider abstraction via `lib/ai/` — swap provider by changing `provider.ts`
+- **Resume Parsing**: PDF via `pdf-parse`, DOCX via `mammoth`, images via Gemini multimodal
 
 ## Scripts
 

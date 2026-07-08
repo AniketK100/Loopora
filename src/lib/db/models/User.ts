@@ -20,6 +20,7 @@ export interface IUserDocument extends Document {
   bookmarks: mongoose.Types.ObjectId[];
   practiced: mongoose.Types.ObjectId[];
   isPremium: boolean;
+  selectedFolders: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;
@@ -51,6 +52,14 @@ const UserSchema = new Schema<IUserDocument>(
     bookmarks: [{ type: Schema.Types.ObjectId, ref: "Question", default: [] }],
     practiced: [{ type: Schema.Types.ObjectId, ref: "Question", default: [] }],
     isPremium: { type: Boolean, default: false },
+    selectedFolders: {
+      type: [{ type: Schema.Types.ObjectId, ref: "Category" }],
+      default: [],
+      validate: [
+        (val: mongoose.Types.ObjectId[]) => val.length <= 2,
+        "selectedFolders array exceeds maximum permitted limit of 2 items",
+      ],
+    },
     lastLoginAt: { type: Date },
   },
   {

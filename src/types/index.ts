@@ -27,6 +27,19 @@ export interface User {
   bookmarks: string[]; // Question IDs
   practiced: string[]; // Question IDs
   isPremium: boolean;
+  selectedFolders?: string[];
+  latestResume?: {
+    _id: string;
+    originalFilename: string;
+    mimeTypeSniffed: string;
+    pageCount: number;
+    createdAt: string;
+  } | null;
+  resumeAnalysis?: {
+    detectedRole: string;
+    skills: string[];
+    yearsExperience: number;
+  } | null;
   createdAt: string;
   lastLoginAt?: string;
 }
@@ -162,7 +175,9 @@ export type AuditEntityType =
   | "FeatureFlag"
   | "User"
   | "Session"
-  | "Suggestion";
+  | "Suggestion"
+  | "Resume"
+  | "ResumeAnalysis";
 
 export interface AuditLog {
   _id: string;

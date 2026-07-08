@@ -40,18 +40,14 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
     <LenisProvider>
       <ImpersonationBanner />
       <div className="flex flex-col min-h-screen bg-[var(--color-bg)]">
-        <header className={`border-b-2 sticky top-0 z-50 transition-colors duration-300 ${
-          isHomeRoute 
-            ? "border-neutral-900 bg-[#110f0d]/95 backdrop-blur-sm" 
-            : "border-[var(--color-border)] bg-[var(--color-bg)]"
-        }`}>
+        <header className="border-b-2 sticky top-0 z-50 transition-colors duration-300 border-[var(--color-border)] bg-[var(--color-bg)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <span
                 className="text-2xl font-bold hover:rotate-2 transition-transform cursor-pointer"
                 style={{ 
                   fontFamily: "var(--font-heading)", 
-                  color: isHomeRoute ? "#f0e6d6" : "var(--color-fg)" 
+                  color: "var(--color-fg)" 
                 }}
               >
                 Loopora
@@ -61,25 +57,19 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
             <nav className="hidden md:flex items-center space-x-6 font-[family-name:var(--font-heading)] font-bold text-lg">
               <Link 
                 href="/interview" 
-                className={`transition-colors ${
-                  isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg)] hover:text-[var(--color-accent)]"
-                }`}
+                className="transition-colors text-[var(--color-fg)] hover:text-[var(--color-accent)]"
               >
                 Library
               </Link>
               <Link 
                 href="/search" 
-                className={`transition-colors ${
-                  isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg)] hover:text-[var(--color-accent)]"
-                }`}
+                className="transition-colors text-[var(--color-fg)] hover:text-[var(--color-accent)]"
               >
                 Search
               </Link>
               <Link 
                 href="/suggest" 
-                className={`transition-colors ${
-                  isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg)] hover:text-[var(--color-accent)]"
-                }`}
+                className="transition-colors text-[var(--color-fg)] hover:text-[var(--color-accent)]"
               >
                 Suggest Q&A
               </Link>
@@ -90,9 +80,7 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
                 <div className="flex items-center gap-3">
                   <Link
                     href="/profile"
-                    className={`text-sm transition-colors font-[family-name:var(--font-body)] hidden sm:inline ${
-                      isHomeRoute ? "text-[#a89882] hover:text-[#f0e6d6]" : "text-[var(--color-fg-muted)] hover:text-[var(--color-accent)]"
-                    }`}
+                    className="text-sm transition-colors font-[family-name:var(--font-body)] hidden sm:inline text-[var(--color-fg-muted)] hover:text-[var(--color-accent)]"
                   >
                     Hi, {user.name}
                   </Link>
@@ -100,11 +88,7 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
                   {(user.role === "admin" || user.role === "editor") && (
                     <Link
                       href="/admin"
-                      className={`px-3 py-1.5 text-sm wobbly-sm border-2 hover:translate-y-[-1px] transition-transform ${
-                        isHomeRoute 
-                          ? "bg-amber-600 text-black border-neutral-900" 
-                          : "bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-border)]"
-                      }`}
+                      className="px-3 py-1.5 text-sm wobbly-sm border-2 hover:translate-y-[-1px] transition-transform bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-border)]"
                     >
                       Admin
                     </Link>
@@ -116,21 +100,13 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
                 <div className="flex items-center gap-3">
                   <Link
                     href="/login"
-                    className={`px-3 py-1.5 text-sm border-2 wobbly-sm transition-colors ${
-                      isHomeRoute 
-                        ? "border-neutral-800 text-[#f0e6d6] hover:bg-neutral-900" 
-                        : "border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]"
-                    }`}
+                    className="px-3 py-1.5 text-sm border-2 wobbly-sm transition-colors border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/signup"
-                    className={`px-3 py-1.5 text-sm wobbly-sm border-2 hover:translate-y-[-1px] transition-transform ${
-                      isHomeRoute 
-                        ? "bg-amber-500 text-black border-neutral-900" 
-                        : "bg-[var(--color-secondary)] text-[var(--color-bg)] border-[var(--color-border)]"
-                    }`}
+                    className="px-3 py-1.5 text-sm wobbly-sm border-2 hover:translate-y-[-1px] transition-transform bg-[var(--color-secondary)] text-[var(--color-bg)] border-[var(--color-border)]"
                   >
                     Sign Up
                   </Link>
@@ -142,48 +118,46 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
 
         <main className="flex-1">{children}</main>
 
-        {!isHomeRoute && (
-          <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
-            <div className="max-w-7xl mx-auto px-4 space-y-6">
-              <p className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)]">
-                Loopora - The Hand-Drawn Notebook for Interview Success.
-              </p>
-              <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-xs font-[family-name:var(--font-heading)] font-bold">
-                <Link
-                  href="/interview"
-                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-bg)] transition-colors"
-                >
-                  Library Folder
-                </Link>
-                <Link
-                  href="/suggest"
-                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-post-it-dark)] hover:text-[var(--color-fg)] transition-colors"
-                >
-                  Suggest Q&A
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
-                >
-                  Privacy Policy
-                </Link>
-                <Link
-                  href="/terms"
-                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-success)] hover:text-[var(--color-bg)] transition-colors"
-                >
-                  Terms of Service
-                </Link>
-                <Link
-                  href="/cookies"
-                  className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-warning)] hover:text-[var(--color-bg)] transition-colors"
-                >
-                  Cookie Policy
-                </Link>
-              </div>
-              <p className="text-xs">&copy; {new Date().getFullYear()} Loopora. Made for interview prep.</p>
+        <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
+          <div className="max-w-7xl mx-auto px-4 space-y-6">
+            <p className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)]">
+              Loopora - The Hand-Drawn Notebook for Interview Success.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-xs font-[family-name:var(--font-heading)] font-bold">
+              <Link
+                href="/interview"
+                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-bg)] transition-colors"
+              >
+                Library Folder
+              </Link>
+              <Link
+                href="/suggest"
+                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-post-it-dark)] hover:text-[var(--color-fg)] transition-colors"
+              >
+                Suggest Q&A
+              </Link>
+              <Link
+                href="/privacy"
+                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms"
+                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-success)] hover:text-[var(--color-bg)] transition-colors"
+              >
+                Terms of Service
+              </Link>
+              <Link
+                href="/cookies"
+                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-warning)] hover:text-[var(--color-bg)] transition-colors"
+              >
+                Cookie Policy
+              </Link>
             </div>
-          </footer>
-        )}
+            <p className="text-xs">&copy; {new Date().getFullYear()} Loopora. Made for interview prep.</p>
+          </div>
+        </footer>
         <CookieConsent />
       </div>
     </LenisProvider>

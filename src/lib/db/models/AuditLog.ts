@@ -31,7 +31,7 @@ const AuditLogSchema = new Schema<IAuditLogDocument>(
     },
     entityType: {
       type: String,
-      enum: ["Category", "Question", "FeatureFlag", "User", "Session", "Suggestion"],
+      enum: ["Category", "Question", "FeatureFlag", "User", "Session", "Suggestion", "Resume", "ResumeAnalysis"],
       required: true,
       index: true,
     },

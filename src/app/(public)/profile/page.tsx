@@ -115,7 +115,47 @@ export default function ProfilePage() {
     }
   }, [activeTab, session]);
 
+  // Resume upload state variables
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
 
+  // Categories list and selected folders state variables
+  const [allCategories, setAllCategories] = useState<{ _id: string; name: string; slug: string }[]>([]);
+  const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
+  const [foldersUpdating, setFoldersUpdating] = useState(false);
+  const [foldersSuccess, setFoldersSuccess] = useState("");
+  const [foldersError, setFoldersError] = useState("");
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const res = await fetch("/api/categories");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setAllCategories(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    }
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (dbUser && dbUser.selectedFolders) {
+      const dbFolders = dbUser.selectedFolders;
+      setTimeout(() => {
+        setSelectedFolders((prev) => {
+          if (JSON.stringify(prev) !== JSON.stringify(dbFolders)) {
+            return dbFolders;
+          }
+          return prev;
+        });
+      }, 0);
+    }
+  }, [dbUser]);
 
   if (status === "loading" || !session || dbUserLoading || !dbUser) {
     return (
@@ -228,6 +268,129 @@ export default function ProfilePage() {
     }
   };
 
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleFileDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    setUploadError("");
+    setUploadSuccess("");
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      await handleFileUpload(files[0]);
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError("");
+    setUploadSuccess("");
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      await handleFileUpload(files[0]);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("File size exceeds 5MB limit.");
+      return;
+    }
+
+    setUploadingResume(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/resume/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setUploadError(json.error || "Upload failed. Please try again.");
+      } else {
+        setUploadSuccess("Resume successfully parsed and validated!");
+        trackEvent("upload_resume_success", { filename: file.name });
+        
+        // Refresh dbUser details
+        const refreshRes = await fetch("/api/profile");
+        const refreshJson = await refreshRes.json();
+        if (refreshJson.success && refreshJson.data) {
+          setDbUser(refreshJson.data);
+          if (refreshJson.data.selectedFolders) {
+            setSelectedFolders(refreshJson.data.selectedFolders);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setUploadError("Network connection error. Please try again.");
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
+  const handleFolderCheckboxChange = (categoryId: string) => {
+    setFoldersSuccess("");
+    setFoldersError("");
+    setSelectedFolders((prev) => {
+      if (prev.includes(categoryId)) {
+        return prev.filter((id) => id !== categoryId);
+      } else {
+        if (prev.length >= 2) {
+          setFoldersError("You can select at most 2 folders for resume personalization.");
+          return prev;
+        }
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  const handleSaveFolders = async () => {
+    setFoldersSuccess("");
+    setFoldersError("");
+    setFoldersUpdating(true);
+
+    try {
+      const res = await fetch("/api/profile/folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderIds: selectedFolders }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setFoldersError(json.error || "Failed to update folder selection.");
+      } else {
+        setFoldersSuccess("Personalization folders saved successfully!");
+        trackEvent("save_personalization_folders", { count: selectedFolders.length });
+        
+        setDbUser((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            selectedFolders: selectedFolders,
+          };
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setFoldersError("Network connection error. Please try again.");
+    } finally {
+      setFoldersUpdating(false);
+    }
+  };
   const tabs = [
     { id: "overview", label: "👤 Journal Info" },
     { id: "favorites", label: "📌 Pinboard" },
@@ -311,6 +474,150 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
+              </Card>
+
+              {/* Resume Personalization Widget */}
+              <Card className="p-6 md:p-8">
+                <h3 className="text-xl font-bold mb-2 text-[var(--color-fg)] flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <span>📄</span>
+                  <span>AI Resume Personalization</span>
+                </h3>
+                <p className="text-sm text-[var(--color-fg-muted)] mb-6 font-[family-name:var(--font-body)]">
+                  Upload your resume to unlock customized interview answers tailored to your unique background, project history, and experience.
+                </p>
+
+                {/* Display Current Resume Status */}
+                {user.latestResume ? (
+                  <div className="bg-[#faf8f5] border-2 border-[var(--color-border)] wobbly-sm p-4 mb-6 space-y-3 font-[family-name:var(--font-body)]">
+                    <div className="flex flex-wrap justify-between items-center border-b-2 border-dashed border-[var(--color-border-light)] pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">📁</span>
+                        <span className="font-bold text-[var(--color-fg)] break-all">{user.latestResume.originalFilename}</span>
+                      </div>
+                      <Badge variant="success">Validated</Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono text-[var(--color-fg-muted)]">
+                      <div>Format: {user.latestResume.mimeTypeSniffed.split("/").pop()?.toUpperCase()}</div>
+                      <div>Length: {user.latestResume.pageCount} page(s)</div>
+                      <div>Uploaded: {new Date(user.latestResume.createdAt).toLocaleDateString()}</div>
+                    </div>
+
+                    {user.resumeAnalysis && (
+                      <div className="bg-[var(--color-bg-alt)]/25 p-3 rounded border border-[var(--color-border-light)] text-sm space-y-2 mt-2">
+                        <div className="font-bold text-[var(--color-fg)] font-[family-name:var(--font-heading)]">Parsed Profile Highlights:</div>
+                        <div className="text-[var(--color-fg-muted)]"><span className="font-bold text-neutral-700">Target Role:</span> {user.resumeAnalysis.detectedRole}</div>
+                        <div className="text-[var(--color-fg-muted)]"><span className="font-bold text-neutral-700">Experience:</span> {user.resumeAnalysis.yearsExperience} Year(s)</div>
+                        <div className="flex flex-wrap gap-1.5 mt-1 items-center">
+                          <span className="text-xs font-bold text-neutral-700">Skills:</span>
+                          {user.resumeAnalysis.skills.slice(0, 8).map((skill, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-xs font-mono text-[var(--color-fg)]">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-amber-50/50 border-2 border-dashed border-[var(--color-warning)] p-4 wobbly-sm text-sm text-[var(--color-fg)] mb-6 text-center">
+                    No resume uploaded yet. Drag and drop your file below to personalize your prep!
+                  </div>
+                )}
+
+                {/* Dropzone Widget */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleFileDrop}
+                  className={[
+                    "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors duration-200 wobbly-sm relative bg-[var(--color-bg)]",
+                    dragOver
+                      ? "border-[var(--color-accent)] bg-[var(--color-bg-alt)]/30"
+                      : "border-[var(--color-border-light)] hover:bg-[var(--color-bg-alt)]/10"
+                  ].join(" ")}
+                >
+                  <input
+                    type="file"
+                    id="resume-file-input"
+                    accept=".pdf,.docx,.png,.jpg,.jpeg,.webp"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleFileSelect}
+                    disabled={uploadingResume}
+                  />
+                  <div className="space-y-2 pointer-events-none flex flex-col items-center">
+                    <span className="text-4xl">📥</span>
+                    <p className="font-bold text-[var(--color-fg)] font-[family-name:var(--font-heading)]">
+                      {uploadingResume ? "Analyzing file..." : "Drag & Drop your resume here, or click to browse"}
+                    </p>
+                    <p className="text-xs text-[var(--color-fg-muted)]">
+                      Accepted: PDF, DOCX, PNG, JPG, JPEG, WEBP (Max 5MB, up to 8 pages)
+                    </p>
+                  </div>
+                </div>
+
+                {uploadError && <p className="text-sm text-[var(--color-accent)] font-bold mt-3">⚠️ {uploadError}</p>}
+                {uploadSuccess && <p className="text-sm text-[var(--color-success)] font-bold mt-3">✓ {uploadSuccess}</p>}
+
+                {/* Folder Selection Checkboxes */}
+                {user.latestResume && allCategories.length > 0 && (
+                  <div className="mt-8 border-t-2 border-dashed border-[var(--color-border-light)] pt-6 space-y-4">
+                    <h4 className="text-lg font-bold text-[var(--color-fg)] font-[family-name:var(--font-heading)]">
+                      Personalize specific Interview Folders
+                    </h4>
+                    <p className="text-xs text-[var(--color-fg-muted)]">
+                      Select up to 2 categories/folders to personalize with your uploaded resume content.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                      {allCategories.map((cat) => {
+                        const isChecked = selectedFolders.includes(cat._id);
+                        return (
+                          <label
+                            key={cat._id}
+                            className={[
+                              "flex items-center gap-3 p-3 border-2 wobbly-sm cursor-pointer select-none transition-all",
+                              isChecked
+                                ? "bg-[var(--color-bg-alt)] border-[var(--color-border)] shadow-sm"
+                                : "bg-[var(--color-bg)] border-[var(--color-border-light)] hover:bg-[var(--color-bg-alt)]/10"
+                            ].join(" ")}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={!isChecked && selectedFolders.length >= 2}
+                              onChange={() => handleFolderCheckboxChange(cat._id)}
+                              className="accent-[var(--color-accent)] w-4 h-4 cursor-pointer"
+                            />
+                            <div className="flex flex-col text-left">
+                              <span className="font-bold text-sm text-[var(--color-fg)] font-[family-name:var(--font-heading)]">
+                                {cat.name}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {foldersError && <p className="text-sm text-[var(--color-accent)] font-bold">⚠️ {foldersError}</p>}
+                    {foldersSuccess && <p className="text-sm text-[var(--color-success)] font-bold">✓ {foldersSuccess}</p>}
+
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-xs text-[var(--color-fg-muted)] font-mono">
+                        {selectedFolders.length} of 2 folders selected
+                      </span>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={handleSaveFolders}
+                        disabled={foldersUpdating}
+                        className="font-[family-name:var(--font-heading)] font-bold text-sm"
+                      >
+                        {foldersUpdating ? "Saving..." : "Save Folders Selection"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Card>
 
               {/* Name Editor Card */}
