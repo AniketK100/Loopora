@@ -52,12 +52,12 @@ Loopora is an **SEO-optimized interview preparation SaaS** where candidates can:
 ## 🏗️ Tech Stack
 
 ```
-Frontend        → Next.js 15 (App Router) + React 19 + TypeScript
+Frontend        → Next.js 16 (App Router) + React 19 + TypeScript
 Styling         → Tailwind CSS v4 + CSS Custom Properties (design tokens)
 Database        → MongoDB Atlas + Mongoose ODM
 Authentication  → NextAuth.js v5 (Credentials + Google OAuth)
-Animations      → Framer Motion
-Icons           → Lucide React (strokeWidth: 2.5)
+Animations      → GSAP 3 + Lenis + Framer Motion
+Icons           → Lucide React
 Validation      → Zod (all API routes)
 Fonts           → Kalam + Patrick Hand (self-hosted via next/font)
 Hosting         → Vercel + MongoDB Atlas
@@ -181,12 +181,17 @@ Borders use **wobbly radius** values to simulate imperfect hand-drawn shapes. Al
 
 ## 🏛️ Architecture
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation of:
-- All architectural decisions and rationale
-- Complete folder structure with descriptions
-- Data flow patterns (SSR, ISR, API routes)
-- Security architecture (RBAC, XSS prevention, CSP)
-- Full dependency inventory
+See [docs/](docs/) for comprehensive documentation:
+
+| Document | Description |
+|---|---|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, tech stack, route structure |
+| [LANDING_PAGE.md](docs/LANDING_PAGE.md) | Landing page component guide |
+| [ANIMATION_SYSTEM.md](docs/ANIMATION_SYSTEM.md) | GSAP, Lenis, Framer Motion integration |
+| [GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) | Branch strategy, safe workflows |
+| [ROLLBACK.md](docs/ROLLBACK.md) | Recovery procedures, emergency checklist |
+| [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | Complete file tree |
+| [DEPENDENCIES.md](docs/DEPENDENCIES.md) | Package inventory and scripts |
 
 ---
 
