@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0] - 2026-07-09 — Production Ready (MongoDB Atlas)
+
+### Changed
+- **Database:** Migrated from local MongoDB to **MongoDB Atlas** (`interviewloop` cluster). Local MongoDB retained as golden backup.
+- **Login rate limiting:** Credentials login (`auth:login`) is now IP-based and rate-limited via the shared DB-backed limiter (`RATE_LIMIT_AUTH_MAX`).
+- **CSP:** Production builds drop `unsafe-eval` while retaining `unsafe-inline` (required by Next.js App Router inline scripts). Development CSP unchanged.
+
+### Security Hardening
+- Verified authentication, RBAC, session validation, CSRF, and input validation.
+- Resume upload pipeline verified: magic-byte + extension + MIME cross-validation, 5 MB and 8-page limits, SHA-256 duplicate detection, DOCX macro rejection.
+- `.gitignore` updated to exclude all backup folders (`migration_dump/`, `migration_dump_atlas_backup/`, `atlas_backup_production/`) and temp/cache/log dirs.
+
+### Added
+- Fresh Atlas production backup (`atlas_backup_production/`).
+- Database rollback procedure documented in `docs/ROLLBACK.md` (Atlas → Local MongoDB revert).
+
 ## [0.2.0] - 2026-07-09
 
 ### Added

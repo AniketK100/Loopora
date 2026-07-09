@@ -1,5 +1,34 @@
 # Rollback & Recovery
 
+## Database Rollback (MongoDB Atlas ⇄ Local MongoDB)
+
+The application runs on **MongoDB Atlas** (`MONGODB_URI` in `.env.local`). The **local MongoDB instance
+(`mongodb://127.0.0.1:27017/interviewloop`) is the golden baseline backup** and must never be deleted.
+
+### Revert the application to Local MongoDB
+1. Stop the running app.
+2. In `.env.local`, switch the connection string:
+   ```
+   MONGODB_URI=mongodb://127.0.0.1:27017/interviewloop
+   # MONGODB_URI=mongodb+srv://interviewloop:...@cluster0.ppxbilh.mongodb.net/interviewloop?...
+   ```
+3. Restart: `npm run dev` (or `npm run build && npm start`).
+
+### Restore Atlas from a local backup
+If Atlas data must be rebuilt from the local golden copy:
+1. Ensure local MongoDB is running.
+2. Use the verified dump in `migration_dump/` (all 12 collections, indexes, validators).
+3. Re-import with `mongodump`/`mongorestore` or the project's EJSON restore script, matching the
+   four divergent collections (`users`, `questions`, `categories`, `featureflags`) carefully to avoid
+   unique-index collisions.
+
+### Backup locations (git-ignored, do not commit)
+| Folder | Contents |
+|--------|----------|
+| `migration_dump/` | Local MongoDB golden baseline (pre-migration) |
+| `migration_dump_atlas_backup/` | Atlas snapshot taken before the replace |
+| `atlas_backup_production/` | Fresh Atlas production export |
+
 ## Current Stable Reference Points
 
 | Artifact | Value |

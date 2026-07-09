@@ -75,7 +75,9 @@ If the magic bytes don't match the extension or declared MIME type, the upload i
 
 ## Rate Limiting
 
-- **Auth endpoints:** Configurable max requests per minute per IP (`RATE_LIMIT_AUTH_MAX`)
+- **Auth endpoints:** IP-based, configurable max requests per minute per IP (`RATE_LIMIT_AUTH_MAX`).
+  Applied to **both** the credentials **login** (`auth:login`) and **register** (`auth:register`) flows.
+  When the limit is exceeded the login is blocked (NextAuth returns an authentication error); register returns HTTP `429`.
 - **Public write endpoints:** Configurable max requests per minute per IP (`RATE_LIMIT_PUBLIC_WRITE_MAX`)
 - Backed by MongoDB `RateLimit` collection with TTL index
 

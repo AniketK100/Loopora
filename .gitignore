@@ -69,5 +69,16 @@ yarn-error.log*
 # --- Turbopack cache ----------------------------------------------------------
 .turbo/
 
+# --- Backups (do NOT commit; Local MongoDB + Atlas dumps are the safety net) ---
+migration_dump/
+migration_dump_atlas_backup/
+atlas_backup_production/
+
+# --- Temp / cache / logs -------------------------------------------------------
+tmp/
+temp/
+.cache/
+logs/
+
 # --- Misc ---------------------------------------------------------------------
 *.log

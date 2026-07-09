@@ -27,10 +27,18 @@ export default auth((req) => {
     },
   });
 
-  // Content Security Policy (CSP) allowlist for embed providers
+  // Content Security Policy (CSP) allowlist for embed providers.
+  // Development keeps Next.js's full dev CSP (unsafe-inline + unsafe-eval for Fast Refresh).
+  // Production removes unsafe-eval (not required by optimized production builds) but retains
+  // unsafe-inline because Next.js App Router injects inline RSC/bootstrap scripts that cannot be
+  // nonce-allowlisted without framework changes — removing it would break GSAP/Lenis/React hydration.
+  const isProd = process.env.NODE_ENV === "production";
+  const scriptSrc = isProd
+    ? "script-src 'self' 'unsafe-inline';"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval';";
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    ${scriptSrc}
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: blob: res.cloudinary.com img.youtube.com i.vimeocdn.com;
     font-src 'self' data:;

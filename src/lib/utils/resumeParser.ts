@@ -8,7 +8,16 @@
  */
 
 import { PDFParse } from "pdf-parse";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import path from "path";
 import mammoth from "mammoth";
+
+const pdfWorkerPath = path.resolve(
+  process.cwd(),
+  "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"
+);
+pdfjs.GlobalWorkerOptions.workerSrc =
+  "file:///" + pdfWorkerPath.replace(/\\/g, "/");
 
 export interface ParserResult {
   text: string;

@@ -9,7 +9,7 @@
  * @see 05_Backend_Schema_Data_Auth.md §3 — Auth Design
  */
 
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import type { Provider } from "next-auth/providers";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
@@ -18,8 +18,10 @@ import { z } from "zod";
 import { authConfig } from "./auth.config";
 import { connectDB } from "@/lib/db/connection";
 import { User } from "@/lib/db/models/User";
+import { checkRateLimit } from "@/lib/auth/rateLimit";
 
 import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { Session } from "@/lib/db/models/Session";
 
 // Define TypeScript type expansion for NextAuth Session and User models
@@ -75,10 +77,34 @@ const providers: Provider[] = [
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
     },
-    async authorize(credentials) {
+    async authorize(credentials, request) {
+      console.log("[AUTH] authorize called. request type:", typeof request, "request?.url:", request?.url);
       const parsed = loginSchema.safeParse(credentials);
       if (!parsed.success) {
+        console.log("[AUTH] Schema validation failed:", parsed.error.issues);
         return null;
+      }
+
+      // IP-based login rate limiting (configurable via RATE_LIMIT_AUTH_MAX).
+      // Reuses the same DB-backed limiter as the register route. Blocks brute-force
+      // / credential-stuffing without affecting already-authenticated users.
+      // NOTE: use the request object passed to authorize (headers() from next/headers
+      // is unavailable in this callback context).
+      try {
+        const rateReq = new NextRequest(request.url || "http://localhost", {
+          headers: request.headers,
+          method: request.method,
+        });
+        const loginLimit = Number(process.env.RATE_LIMIT_AUTH_MAX ?? 10);
+        const rl = await checkRateLimit(rateReq, "auth:login", loginLimit, 60 * 1000);
+        console.log("[AUTH] Rate limit result:", JSON.stringify(rl));
+        if (!rl.allowed) {
+          throw new CredentialsSignin("Too many login attempts. Please try again later.");
+        }
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[AUTH] Rate limit ERROR:", msg);
+        if (e instanceof CredentialsSignin) throw e;
       }
 
       const { email, password } = parsed.data;
