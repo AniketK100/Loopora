@@ -13,12 +13,23 @@ export interface ResumeAnalysisSummary {
   yearsExperience: number;
 }
 
+export interface ClassificationResult {
+  isResume: boolean;
+  confidence: number;
+  label: string;
+  reasons: string[];
+}
+
+export interface QualityResult {
+  score: number;
+  missingSections: string[];
+  suggestions: string[];
+}
+
 export interface AIService {
   analyzeResume(extractedText: string): Promise<ResumeAnalysisSummary>;
-  analyzeResumeImage(
-    imageBuffer: Buffer,
-    mimeType: string
-  ): Promise<{ extractedText: string; summary: ResumeAnalysisSummary }>;
+  classifyDocument(extractedText: string): Promise<ClassificationResult>;
+  analyzeResumeQuality(extractedText: string): Promise<QualityResult>;
   generatePersonalizedAnswer(
     question: string,
     sampleAnswer: string,

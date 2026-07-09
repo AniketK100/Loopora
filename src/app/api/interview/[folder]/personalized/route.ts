@@ -6,6 +6,9 @@
  * Personalizes interview answers for a specific resume in the chosen folder.
  * Enforces a hard cap of 2 folders per resume, and limits normal users to the
  * top 10 questions sorted by frequencyRank.
+ *
+ * Cache key: user + question + resumeContentHash + modelVersion
+ * Classification gate: resume must be classified as resume with confidence >= 0.75
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -19,6 +22,8 @@ import { Resume } from "@/lib/db/models/Resume";
 import { PersonalizedAnswer } from "@/lib/db/models/PersonalizedAnswer";
 import { AuditLog } from "@/lib/db/models/AuditLog";
 import { getAIService } from "@/lib/ai/provider";
+
+const AI_MODEL_VERSION = "v1";
 
 interface RouteParams {
   params: Promise<{ folder: string }>;
@@ -46,7 +51,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     await connectDB();
 
-    // 1. Fetch user to verify subscription status and selected folders limit
+    // 1. Fetch user
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
@@ -68,7 +73,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Resume not found or access denied." }, { status: 404 });
     }
 
-    // 4. Enforce 2-folder cap server-side
+    // 4. Classification gate — resume must be classified
+    if (!resume.isClassifiedAsResume) {
+      return NextResponse.json(
+        {
+          error: "classification_failed",
+          message: "This resume has not been validated. Please re-upload a valid resume.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5. Enforce 2-folder cap server-side
     const isFolderSelected = user.selectedFolders.some(
       (id) => id.toString() === category._id.toString()
     );
@@ -83,16 +99,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           { status: 400 }
         );
       }
-      // Add folder to user's selected list
       user.selectedFolders.push(category._id as mongoose.Types.ObjectId);
       await user.save();
     }
 
-    // 5. Fetch questions in this category
-    // Free users: top 10 questions sorted by frequencyRank DESC
-    // Premium users: all published questions in the category
+    // 6. Fetch questions in this category
     let questionsQuery = Question.find({ category: category._id, isPublished: true });
-    
+
     if (user.isPremium) {
       questionsQuery = questionsQuery.sort({ frequencyRank: -1 });
     } else {
@@ -101,60 +114,76 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const questions = await questionsQuery;
 
-    // 6. Resolve cached or new personalized answers for each question
+    // 7. Resolve cached or new personalized answers with controlled concurrency
     const aiService = getAIService();
-    const result = [];
+    const CONCURRENCY_LIMIT = 4;
 
-    for (const q of questions) {
-      // Look up cached personalization
-      let cached = await PersonalizedAnswer.findOne({
-        user: userId,
-        question: q._id,
-        resumeContentHash: resume.contentHash,
-      });
+    // Phase 1: Check cache for all questions upfront (parallel DB queries)
+    const cacheChecks = await Promise.all(
+      questions.map(async (q) => {
+        const cached = await PersonalizedAnswer.findOne({
+          user: userId,
+          question: q._id,
+          resumeContentHash: resume.contentHash,
+          modelVersion: AI_MODEL_VERSION,
+        });
+        return { question: q, cached };
+      })
+    );
 
-      let personalizedText = "";
+    // Phase 2: Generate only uncached answers with concurrency control
+    const uncached = cacheChecks.filter((c) => !c.cached);
+    const generationResults = new Map<string, string>();
 
-      if (cached) {
-        personalizedText = cached.personalizedText;
-      } else {
-        // Cache miss: generate and persist personalization
-        try {
-          personalizedText = await aiService.generatePersonalizedAnswer(
+    // Process uncached questions in batches of CONCURRENCY_LIMIT
+    for (let i = 0; i < uncached.length; i += CONCURRENCY_LIMIT) {
+      const batch = uncached.slice(i, i + CONCURRENCY_LIMIT);
+      const batchResults = await Promise.allSettled(
+        batch.map(async ({ question: q }) => {
+          const personalizedText = await aiService.generatePersonalizedAnswer(
             q.question,
             q.answer.detailed,
             resume.extractedText
           );
 
-          cached = await PersonalizedAnswer.create({
+          const created = await PersonalizedAnswer.create({
             user: userId,
             question: q._id,
             resumeContentHash: resume.contentHash,
+            modelVersion: AI_MODEL_VERSION,
             personalizedText,
           });
 
           await AuditLog.create({
             actor: new mongoose.Types.ObjectId(userId),
             action: "create",
-            entityType: "ResumeAnalysis", // Tracks personalization AI spend
-            entityId: cached._id,
+            entityType: "ResumeAnalysis",
+            entityId: created._id,
             diff: { questionId: q._id, resumeId: resume._id, categoryId: category._id },
           });
-        } catch (err) {
-          console.error(`[Personalization API] AI generation failed for question ${q._id}:`, err);
-          // Fallback to sample answer if AI fails so the page loads successfully
-          personalizedText = q.answer.detailed;
+
+          return { questionId: q._id.toString(), personalizedText };
+        })
+      );
+
+      for (const result of batchResults) {
+        if (result.status === "fulfilled") {
+          generationResults.set(result.value.questionId, result.value.personalizedText);
         }
       }
-
-      result.push({
-        questionId: q._id,
-        slug: q.slug,
-        question: q.question,
-        sampleAnswer: q.answer.detailed,
-        personalizedAnswer: personalizedText,
-      });
     }
+
+    // Phase 3: Assemble final result
+    const result = cacheChecks.map(({ question: q, cached }) => ({
+      questionId: q._id,
+      slug: q.slug,
+      question: q.question,
+      sampleAnswer: q.answer.detailed,
+      personalizedAnswer:
+        cached?.personalizedText ||
+        generationResults.get(q._id.toString()) ||
+        q.answer.detailed, // fallback to sample if generation failed
+    }));
 
     return NextResponse.json({
       success: true,

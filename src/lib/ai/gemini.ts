@@ -8,7 +8,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { AIService, ResumeAnalysisSummary } from "./types";
+import { AIService, ResumeAnalysisSummary, ClassificationResult, QualityResult } from "./types";
 
 export class GeminiService implements AIService {
   private ai: GoogleGenAI;
@@ -17,7 +17,6 @@ export class GeminiService implements AIService {
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      // In development, default to a placeholder or fail safely if not running AI actions yet
       throw new Error("Missing GEMINI_API_KEY environment variable.");
     }
     this.ai = new GoogleGenAI({ apiKey });
@@ -25,7 +24,7 @@ export class GeminiService implements AIService {
 
   async analyzeResume(extractedText: string): Promise<ResumeAnalysisSummary> {
     const prompt = `You are an expert ATS (Applicant Tracking System) parser. Analyze the following resume text and extract the target role, key skills, and total estimated years of professional experience.
-    
+
     Resume Text:
     ${extractedText}`;
 
@@ -54,52 +53,78 @@ export class GeminiService implements AIService {
     return JSON.parse(text) as ResumeAnalysisSummary;
   }
 
-  async analyzeResumeImage(
-    imageBuffer: Buffer,
-    mimeType: string
-  ): Promise<{ extractedText: string; summary: ResumeAnalysisSummary }> {
-    const prompt = "You are an expert resume parser. Extract all legible text from this resume image and return the structured ATS analysis summary.";
+  async classifyDocument(extractedText: string): Promise<ClassificationResult> {
+    const prompt = `You are a document classifier. Analyze the following text and determine if it is a resume/CV.
+
+    Return:
+    - isResume: true if it is a resume, false otherwise
+    - confidence: a number between 0 and 1 indicating how confident you are
+    - label: one of "resume", "cover_letter", "transcript", "certificate", "article", "other"
+    - reasons: an array of strings explaining your classification
+
+    Text to classify:
+    ${extractedText.substring(0, 5000)}`;
 
     const response = await this.ai.models.generateContent({
       model: this.modelName,
-      contents: [
-        {
-          inlineData: {
-            data: imageBuffer.toString("base64"),
-            mimeType: mimeType,
-          },
-        },
-        prompt,
-      ],
+      contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
           properties: {
-            extractedText: { type: "STRING" },
-            detectedRole: { type: "STRING" },
-            skills: { type: "ARRAY", items: { type: "STRING" } },
-            yearsExperience: { type: "INTEGER" },
+            isResume: { type: "BOOLEAN" },
+            confidence: { type: "NUMBER" },
+            label: { type: "STRING" },
+            reasons: { type: "ARRAY", items: { type: "STRING" } },
           },
-          required: ["extractedText", "detectedRole", "skills", "yearsExperience"],
+          required: ["isResume", "confidence", "label", "reasons"],
         },
       },
     });
 
     const text = response.text;
     if (!text) {
-      throw new Error("Empty response from Gemini during resume image analysis.");
+      throw new Error("Empty response from Gemini during document classification.");
     }
 
-    const result = JSON.parse(text);
-    return {
-      extractedText: result.extractedText || "",
-      summary: {
-        detectedRole: result.detectedRole || "",
-        skills: result.skills || [],
-        yearsExperience: result.yearsExperience || 0,
+    return JSON.parse(text) as ClassificationResult;
+  }
+
+  async analyzeResumeQuality(extractedText: string): Promise<QualityResult> {
+    const prompt = `You are a professional resume reviewer. Analyze the following resume and provide:
+    - score: a quality score from 0 to 100
+    - missingSections: an array of important sections that are missing (e.g., "contact_info", "education", "experience", "skills", "projects", "summary", "certifications")
+    - suggestions: an array of actionable suggestions to improve the resume
+
+    Resume Text:
+    ${extractedText.substring(0, 8000)}`;
+
+    const response = await this.ai.models.generateContent({
+      model: this.modelName,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            score: { type: "NUMBER" },
+            missingSections: { type: "ARRAY", items: { type: "STRING" } },
+            suggestions: { type: "ARRAY", items: { type: "STRING" } },
+          },
+          required: ["score", "missingSections", "suggestions"],
+        },
       },
-    };
+    });
+
+    const text = response.text;
+    if (!text) {
+      throw new Error("Empty response from Gemini during resume quality analysis.");
+    }
+
+    const result = JSON.parse(text) as QualityResult;
+    result.score = Math.max(0, Math.min(100, Math.round(result.score)));
+    return result;
   }
 
   async generatePersonalizedAnswer(
@@ -110,7 +135,7 @@ export class GeminiService implements AIService {
     const prompt = `You are a premium career coach helping a candidate prepare for an interview.
     Given the interview question and its canonical sample answer, personalize the response based on the candidate's resume.
     Highlight how their background, projects, or specific skills mentioned in their resume make them an excellent fit.
-    
+
     Requirements:
     1. Speak in the first person ("I", "my").
     2. Integrate real achievements or technologies from their resume seamlessly.
@@ -136,7 +161,6 @@ export class GeminiService implements AIService {
       throw new Error("Empty response from Gemini during personalized answer generation.");
     }
 
-    // Clean any accidentally returned markdown wrap
     return text.replace(/^```html\s*/i, "").replace(/```$/i, "").trim();
   }
 }

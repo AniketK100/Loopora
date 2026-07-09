@@ -2,7 +2,8 @@
  * InterviewWorkspaceWrapper Client Component
  *
  * Client-side wrapper for the Interview Workspace.
- * Handles resume upload, folder selection, and category navigation.
+ * Handles resume upload, folder selection, category navigation,
+ * premium upgrade modal, and resume manager.
  *
  * @module app/(public)/interview/InterviewWorkspaceWrapper
  */
@@ -14,6 +15,9 @@ import Link from "next/link";
 import { Card, Badge } from "@/components/ui";
 import { ResumeUploadPanel } from "./ResumeUploadPanel";
 import { FolderSelectionDialog } from "./FolderSelectionDialog";
+import { PremiumUpgradeModal } from "@/components/PremiumUpgradeModal";
+import { ResumeManager } from "@/components/ResumeManager";
+import { useResumeUpload } from "@/hooks/useResumeUpload";
 
 interface Category {
   _id: string;
@@ -37,9 +41,23 @@ export function InterviewWorkspaceWrapper({
   hasResume,
 }: InterviewWorkspaceWrapperProps) {
   const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showResumeManager, setShowResumeManager] = useState(false);
   const [uploadedResumeId, setUploadedResumeId] = useState<string | null>(
     latestResumeId || null
   );
+
+  const {
+    resumes,
+    maxResumes,
+    isPremium,
+    isUploading,
+    uploadStage,
+    setActiveResume,
+    deleteResume,
+    renameResume,
+    refreshResumes: _refreshResumes,
+  } = useResumeUpload();
 
   const handleResumeUploaded = useCallback((resumeId: string) => {
     setUploadedResumeId(resumeId);
@@ -85,7 +103,26 @@ export function InterviewWorkspaceWrapper({
   return (
     <div className="space-y-8">
       {/* Resume Upload Section */}
-      <ResumeUploadPanel onResumeUploaded={handleResumeUploaded} />
+      <ResumeUploadPanel
+        onResumeUploaded={handleResumeUploaded}
+        onShowPremiumModal={() => setShowPremiumModal(true)}
+        onShowResumeManager={() => setShowResumeManager(true)}
+      />
+
+      {/* Resume Manager (only when multiple resumes) */}
+      {showResumeManager && resumes.length > 0 && (
+        <ResumeManager
+          resumes={resumes}
+          maxResumes={maxResumes}
+          isPremium={isPremium}
+          isUploading={isUploading}
+          uploadStage={uploadStage}
+          onSetActive={setActiveResume}
+          onDelete={deleteResume}
+          onRename={renameResume}
+          onUploadNew={() => setShowResumeManager(false)}
+        />
+      )}
 
       {/* Folder Selection Prompt */}
       {uploadedResumeId && !hasResume && (
@@ -167,6 +204,12 @@ export function InterviewWorkspaceWrapper({
         onClose={() => setShowFolderDialog(false)}
         resumeId={uploadedResumeId || ""}
         onFoldersSelected={handleFoldersSelected}
+      />
+
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
       />
     </div>
   );

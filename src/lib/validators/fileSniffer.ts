@@ -1,8 +1,9 @@
 /**
  * Security-First File Type Sniffer
  *
- * Validates extension, declared MIME, and binary magic-bytes signature 
+ * Validates extension, declared MIME, and binary magic-bytes signature
  * to prevent spoofed/malicious uploads. Rejects encrypted/password-protected PDFs.
+ * Detects executables renamed to PDF.
  *
  * @module lib/validators/fileSniffer
  */
@@ -53,12 +54,11 @@ export function validateMagicBytes(
     }
 
     // Check for encrypted/password-protected PDF
-    // Encrypted PDFs contain "/Encrypt" or "/Standard" security handler in their structure
     const contentStr = buffer.toString("latin1");
     const hasEncryptDict = /\/Encrypt\s/i.test(contentStr);
     const hasStandardHandler = /\/Standard\s/i.test(contentStr);
     const hasUR3 = /\/UR\s*3\s/i.test(contentStr);
-    
+
     if (hasEncryptDict || hasStandardHandler || hasUR3) {
       return {
         isValid: false,
