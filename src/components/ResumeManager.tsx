@@ -222,7 +222,7 @@ export function ResumeManager({
               )}
 
               {/* Missing Sections */}
-              {resume.missingSections.length > 0 && (
+              {resume.missingSections?.length > 0 && (
                 <div className="text-xs text-amber-700">
                   Missing: {resume.missingSections.join(", ")}
                 </div>

@@ -189,7 +189,7 @@ export function ResumeUploadPanel({
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-bold text-[var(--color-fg)]">Quality:</span>
                 <QualityBadge score={latestResume.qualityScore} />
-                {latestResume.missingSections.length > 0 && (
+                {latestResume.missingSections?.length > 0 && (
                   <span className="text-xs text-[var(--color-fg-muted)]">
                     Missing: {latestResume.missingSections.join(", ")}
                   </span>
@@ -238,7 +238,7 @@ export function ResumeUploadPanel({
             )}
 
             {/* Suggestions */}
-            {latestResume.suggestions.length > 0 && (
+            {latestResume.suggestions?.length > 0 && (
               <div className="bg-amber-50/50 p-3 border border-amber-200 text-xs space-y-1">
                 <div className="font-bold text-amber-800">Suggestions:</div>
                 {latestResume.suggestions.slice(0, 3).map((s, i) => (
