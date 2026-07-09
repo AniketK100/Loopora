@@ -14,6 +14,7 @@ import Link from "next/link";
 import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
+import { auth } from "@/auth";
 import { Card } from "@/components/ui";
 import { CategoryQuestionsContainer } from "./CategoryQuestionsContainer";
 
@@ -51,6 +52,12 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
     notFound();
   }
 
+  // Retrieve current user authorization status
+  const session = await auth();
+  const user = session?.user;
+  const userHasPremium =
+    user ? user.role === "admin" || user.role === "editor" || !!user.isPremium : false;
+
   // Retrieve all published questions for this category
   const questionDocs = await Question.find({
     category: categoryDoc._id,
@@ -77,6 +84,10 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
     difficulty: q.difficulty,
     isPremium: q.isPremium,
     tags: q.tags || [],
+    resources: (q.resources || []).map((r) => ({
+      title: r.title,
+      url: r.url,
+    })),
     videos: (q.videos || []).map((v) => ({
       label: v.label,
       url: v.url,
@@ -108,7 +119,7 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Navigation Breadcrumb */}
         <div className="text-sm font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg-muted)]">
@@ -150,6 +161,7 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
         <CategoryQuestionsContainer
           category={categoryData}
           questions={questionsData}
+          userHasPremium={userHasPremium}
         />
       </div>
     </div>

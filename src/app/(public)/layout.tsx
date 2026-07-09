@@ -13,9 +13,10 @@ import { auth } from "@/auth";
 import { PublicSignOutButton } from "./PublicSignOutButton";
 import { headers } from "next/headers";
 import { CookieConsent, UnderMaintenance } from "@/components/ui";
-import { LenisProvider } from "@/components/LenisProvider";
 import { isMaintenanceModeActive } from "@/lib/flags";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { connectDB } from "@/lib/db/connection";
+import { User } from "@/lib/db/models/User";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -23,7 +24,20 @@ interface PublicLayoutProps {
 
 export default async function PublicLayout({ children }: PublicLayoutProps) {
   const session = await auth();
-  const user = session?.user;
+  let user = session?.user;
+
+  // Re-fetch role from database to ensure latest role is used (JWT may be stale)
+  if (user?.id) {
+    try {
+      await connectDB();
+      const dbUser = await User.findById(user.id).select("role isPremium");
+      if (dbUser) {
+        user = { ...user, role: dbUser.role, isPremium: dbUser.isPremium };
+      }
+    } catch (error) {
+      console.error("[PublicLayout] Failed to refresh user role:", error);
+    }
+  }
 
   const isMaint = await isMaintenanceModeActive();
   const headersList = await headers();
@@ -33,11 +47,11 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
   const isAdmin = user?.role === "admin" || user?.role === "editor";
 
   if (isMaint && !isHomeRoute && !isAuthRoute && !isAdmin) {
-    return <UnderMaintenance />;
+    return <UnderMaintenance isLoggedIn={!!user} />;
   }
 
   return (
-    <LenisProvider>
+    <>
       <ImpersonationBanner />
       <div className="flex flex-col min-h-screen bg-[var(--color-bg)]">
         <header className="border-b-2 sticky top-0 z-50 transition-colors duration-300 border-[var(--color-border)] bg-[var(--color-bg)]">
@@ -160,6 +174,6 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
         </footer>
         <CookieConsent />
       </div>
-    </LenisProvider>
+    </>
   );
 }

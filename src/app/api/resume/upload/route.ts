@@ -108,97 +108,62 @@ export async function POST(request: NextRequest) {
     }
 
     const sniffedMime = snifferResult.sniffedMime;
-    const isImage = sniffedMime.startsWith("image/");
 
+    // Extract text and page count from PDF
     let extractedText = "";
     let pageCount = 1;
 
-    // 5. Page count and Text Extraction for documents
-    if (!isImage) {
-      try {
-        const parsed = await extractTextAndPageCount(buffer, sniffedMime);
-        extractedText = parsed.text;
-        pageCount = parsed.pageCount;
-      } catch (err) {
-        await connectDB();
-        const errMsg = err instanceof Error ? err.message : "Local file parsing error";
-        await AuditLog.create({
-          actor: new mongoose.Types.ObjectId(userId),
-          action: "create",
-          entityType: "Resume",
-          entityId: new mongoose.Types.ObjectId(userId),
-          diff: { error: errMsg, filename },
-        });
-        return NextResponse.json(
-          { error: errMsg },
-          { status: 400 }
-        );
-      }
+    try {
+      const parsed = await extractTextAndPageCount(buffer, sniffedMime);
+      extractedText = parsed.text;
+      pageCount = parsed.pageCount;
+    } catch (err) {
+      await connectDB();
+      const errMsg = err instanceof Error ? err.message : "Failed to parse PDF file";
+      await AuditLog.create({
+        actor: new mongoose.Types.ObjectId(userId),
+        action: "create",
+        entityType: "Resume",
+        entityId: new mongoose.Types.ObjectId(userId),
+        diff: { error: errMsg, filename },
+      });
+      return NextResponse.json(
+        { error: errMsg },
+        { status: 400 }
+      );
+    }
 
-      // Validate Page count (8 pages max)
-      if (pageCount > 8) {
-        await connectDB();
-        await AuditLog.create({
-          actor: new mongoose.Types.ObjectId(userId),
-          action: "create",
-          entityType: "Resume",
-          entityId: new mongoose.Types.ObjectId(userId),
-          diff: { error: "Exceeded max page count limit", pageCount, filename },
-        });
-        return NextResponse.json(
-          { error: "Resume exceeds the maximum limit of 8 pages." },
-          { status: 400 }
-        );
-      }
+    // Validate Page count (8 pages max)
+    if (pageCount > 8) {
+      await connectDB();
+      await AuditLog.create({
+        actor: new mongoose.Types.ObjectId(userId),
+        action: "create",
+        entityType: "Resume",
+        entityId: new mongoose.Types.ObjectId(userId),
+        diff: { error: "Exceeded max page count limit", pageCount, filename },
+      });
+      return NextResponse.json(
+        { error: "Resume exceeds the maximum limit of 8 pages." },
+        { status: 400 }
+      );
     }
 
     await connectDB();
 
-    // 6. Caching, Duplicate Lookups, and AI analysis
-    let contentHash = "";
+    // Compute content hash for caching
+    const contentHash = computeSHA256(extractedText);
+
+    // Check cache first
+    const cachedAnalysis = await ResumeAnalysis.findOne({ contentHash });
     let summary: {
       detectedRole?: string;
       skills?: string[];
       yearsExperience?: number;
     } | null = null;
 
-    if (!isImage) {
-      contentHash = computeSHA256(extractedText);
-
-      // Check cache first
-      const cachedAnalysis = await ResumeAnalysis.findOne({ contentHash });
-      if (cachedAnalysis) {
-        // Cache hit! Save Resume metadata, but reuse cached analysis summary
-        const resume = await Resume.create({
-          user: new mongoose.Types.ObjectId(userId),
-          originalFilename: filename,
-          mimeTypeDeclared: declaredMime,
-          mimeTypeSniffed: sniffedMime,
-          pageCount,
-          contentHash,
-          extractedText,
-          status: "clean",
-        });
-
-        await AuditLog.create({
-          actor: new mongoose.Types.ObjectId(userId),
-          action: "create",
-          entityType: "Resume",
-          entityId: resume._id,
-          diff: { cacheHit: true, contentHash, filename },
-        });
-
-        return NextResponse.json({
-          success: true,
-          resumeId: resume._id,
-          summary: cachedAnalysis.summary,
-        });
-      }
-
-      // Cache miss: call Gemini for text analysis
-      const aiService = getAIService();
-      summary = await aiService.analyzeResume(extractedText);
-
+    if (cachedAnalysis) {
+      // Cache hit! Reuse cached analysis
       const resume = await Resume.create({
         user: new mongoose.Types.ObjectId(userId),
         originalFilename: filename,
@@ -210,95 +175,59 @@ export async function POST(request: NextRequest) {
         status: "clean",
       });
 
-      await ResumeAnalysis.create({
-        resume: resume._id,
-        contentHash,
-        summary,
-      });
-
       await AuditLog.create({
         actor: new mongoose.Types.ObjectId(userId),
         action: "create",
         entityType: "Resume",
         entityId: resume._id,
-        diff: { cacheHit: false, contentHash, filename },
+        diff: { cacheHit: true, contentHash, filename },
       });
 
       return NextResponse.json({
         success: true,
         resumeId: resume._id,
-        summary,
-      });
-    } else {
-      // Multimodal Image analysis: Send to Gemini to extract text and analyze in one go
-      const aiService = getAIService();
-      const imageResult = await aiService.analyzeResumeImage(buffer, sniffedMime);
-      
-      extractedText = imageResult.extractedText;
-      contentHash = computeSHA256(extractedText);
-      summary = imageResult.summary;
-
-      // Check cache hit using parsed contentHash
-      const cachedAnalysis = await ResumeAnalysis.findOne({ contentHash });
-      if (cachedAnalysis) {
-        const resume = await Resume.create({
-          user: new mongoose.Types.ObjectId(userId),
-          originalFilename: filename,
-          mimeTypeDeclared: declaredMime,
-          mimeTypeSniffed: sniffedMime,
-          pageCount: 1,
-          contentHash,
-          extractedText,
-          status: "clean",
-        });
-
-        await AuditLog.create({
-          actor: new mongoose.Types.ObjectId(userId),
-          action: "create",
-          entityType: "Resume",
-          entityId: resume._id,
-          diff: { cacheHit: true, contentHash, filename, isImage: true },
-        });
-
-        return NextResponse.json({
-          success: true,
-          resumeId: resume._id,
-          summary: cachedAnalysis.summary,
-        });
-      }
-
-      // Save to database
-      const resume = await Resume.create({
-        user: new mongoose.Types.ObjectId(userId),
-        originalFilename: filename,
-        mimeTypeDeclared: declaredMime,
-        mimeTypeSniffed: sniffedMime,
-        pageCount: 1,
         contentHash,
-        extractedText,
-        status: "clean",
-      });
-
-      await ResumeAnalysis.create({
-        resume: resume._id,
-        contentHash,
-        summary,
-      });
-
-      await AuditLog.create({
-        actor: new mongoose.Types.ObjectId(userId),
-        action: "create",
-        entityType: "Resume",
-        entityId: resume._id,
-        diff: { cacheHit: false, contentHash, filename, isImage: true },
-      });
-
-      return NextResponse.json({
-        success: true,
-        resumeId: resume._id,
-        summary,
+        summary: cachedAnalysis.summary,
+        cached: true,
       });
     }
+
+    // Cache miss: call Gemini for text analysis
+    const aiService = getAIService();
+    summary = await aiService.analyzeResume(extractedText);
+
+    const resume = await Resume.create({
+      user: new mongoose.Types.ObjectId(userId),
+      originalFilename: filename,
+      mimeTypeDeclared: declaredMime,
+      mimeTypeSniffed: sniffedMime,
+      pageCount,
+      contentHash,
+      extractedText,
+      status: "clean",
+    });
+
+    await ResumeAnalysis.create({
+      resume: resume._id,
+      contentHash,
+      summary,
+    });
+
+    await AuditLog.create({
+      actor: new mongoose.Types.ObjectId(userId),
+      action: "create",
+      entityType: "Resume",
+      entityId: resume._id,
+      diff: { cacheHit: false, contentHash, filename },
+    });
+
+    return NextResponse.json({
+      success: true,
+      resumeId: resume._id,
+      contentHash,
+      summary,
+      cached: false,
+    });
   } catch (error) {
     console.error("[Resume Upload API] Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal Server Error";

@@ -55,6 +55,7 @@ export interface IQuestionDocument extends Document {
     example?: string;
   };
   videos: IVideoDocument[];
+  resources: { title: string; url: string }[];
   difficulty: Difficulty;
   frequencyRank: number;
   tags: string[];
@@ -83,6 +84,12 @@ const QuestionSchema = new Schema<IQuestionDocument>(
       example: { type: String, trim: true }, // optional worked example / STAR breakdown
     },
     videos: { type: [VideoSchema], default: [] },
+    resources: [
+      {
+        title: { type: String, required: true, trim: true },
+        url: { type: String, required: true, trim: true },
+      },
+    ],
     difficulty: {
       type: String,
       enum: ["easy", "medium", "hard"],

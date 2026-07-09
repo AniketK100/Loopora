@@ -16,7 +16,7 @@ export interface ToggleProps {
   /** Whether the toggle is on */
   checked: boolean;
   /** Callback when toggled */
-  onChange: (checked: boolean) => void;
+  onChange: (_checked: boolean) => void;
   /** Accessible label */
   label?: string;
   /** Whether the toggle is disabled */

@@ -2,7 +2,7 @@
  * Security-First File Type Sniffer
  *
  * Validates extension, declared MIME, and binary magic-bytes signature 
- * to prevent spoofed/malicious uploads.
+ * to prevent spoofed/malicious uploads. Rejects encrypted/password-protected PDFs.
  *
  * @module lib/validators/fileSniffer
  */
@@ -15,6 +15,7 @@ export interface SnifferResult {
 
 /**
  * Validates file signature, extension, and MIME type 100% locally.
+ * Also detects encrypted/password-protected PDFs and rejects them.
  *
  * @param buffer Raw binary file contents
  * @param originalFilename Uploaded file name
@@ -30,9 +31,9 @@ export function validateMagicBytes(
     return { isValid: false, sniffedMime: "", error: "Missing file extension." };
   }
 
-  const allowedExtensions = ["pdf", "docx", "png", "jpg", "jpeg", "webp"];
-  if (!allowedExtensions.includes(ext)) {
-    return { isValid: false, sniffedMime: "", error: `Unsupported extension: .${ext}` };
+  // Only PDF files are accepted
+  if (ext !== "pdf") {
+    return { isValid: false, sniffedMime: "", error: `Unsupported extension: .${ext}. Only PDF files are accepted.` };
   }
 
   if (buffer.length < 12) {
@@ -41,67 +42,33 @@ export function validateMagicBytes(
 
   const hex = buffer.toString("hex", 0, 12).toUpperCase();
 
-  // 1. PDF magic bytes: %PDF- (25 50 44 46)
+  // PDF magic bytes: %PDF- (25 50 44 46)
   if (hex.startsWith("25504446")) {
-    if (ext !== "pdf" || declaredMime !== "application/pdf") {
+    if (declaredMime !== "application/pdf") {
       return {
         isValid: false,
         sniffedMime: "application/pdf",
-        error: "MIME/extension mismatch for PDF file signature.",
+        error: "MIME type mismatch. Expected application/pdf.",
       };
     }
+
+    // Check for encrypted/password-protected PDF
+    // Encrypted PDFs contain "/Encrypt" or "/Standard" security handler in their structure
+    const contentStr = buffer.toString("latin1");
+    const hasEncryptDict = /\/Encrypt\s/i.test(contentStr);
+    const hasStandardHandler = /\/Standard\s/i.test(contentStr);
+    const hasUR3 = /\/UR\s*3\s/i.test(contentStr);
+    
+    if (hasEncryptDict || hasStandardHandler || hasUR3) {
+      return {
+        isValid: false,
+        sniffedMime: "application/pdf",
+        error: "Encrypted or password-protected PDF detected. Please upload an unprotected PDF file.",
+      };
+    }
+
     return { isValid: true, sniffedMime: "application/pdf" };
   }
 
-  // 2. PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A
-  if (hex.startsWith("89504E470D0A1A0A")) {
-    if (ext !== "png" || declaredMime !== "image/png") {
-      return {
-        isValid: false,
-        sniffedMime: "image/png",
-        error: "MIME/extension mismatch for PNG image signature.",
-      };
-    }
-    return { isValid: true, sniffedMime: "image/png" };
-  }
-
-  // 3. JPEG magic bytes: FF D8 FF
-  if (hex.startsWith("FFD8FF")) {
-    if (!["jpg", "jpeg"].includes(ext) || declaredMime !== "image/jpeg") {
-      return {
-        isValid: false,
-        sniffedMime: "image/jpeg",
-        error: "MIME/extension mismatch for JPEG image signature.",
-      };
-    }
-    return { isValid: true, sniffedMime: "image/jpeg" };
-  }
-
-  // 4. WEBP magic bytes: RIFF (52 49 46 46) ... WEBP (57 45 42 50 at offset 8)
-  if (hex.startsWith("52494646") && hex.substring(16, 24) === "57454250") {
-    if (ext !== "webp" || declaredMime !== "image/webp") {
-      return {
-        isValid: false,
-        sniffedMime: "image/webp",
-        error: "MIME/extension mismatch for WEBP image signature.",
-      };
-    }
-    return { isValid: true, sniffedMime: "image/webp" };
-  }
-
-  // 5. DOCX magic bytes: ZIP container signature PK\x03\x04 (50 4B 03 04)
-  if (hex.startsWith("504B0304")) {
-    const docxMime =
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    if (ext !== "docx" || declaredMime !== docxMime) {
-      return {
-        isValid: false,
-        sniffedMime: docxMime,
-        error: "MIME/extension mismatch for DOCX archive signature.",
-      };
-    }
-    return { isValid: true, sniffedMime: docxMime };
-  }
-
-  return { isValid: false, sniffedMime: "", error: "File signature signature mismatch." };
+  return { isValid: false, sniffedMime: "", error: "Invalid file signature. Only PDF files are accepted." };
 }

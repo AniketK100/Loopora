@@ -1,10 +1,13 @@
 /**
- * FinalScene — Premium Developer Workspace Footer.
+ * FinalScene — Premium Developer Workspace Scene.
  *
  * Flat, absolute positioned layout mimicking a real study room wall/desk.
- * Sits inside a padded footer container to prevent browser window/scrollbar truncation.
- * Occupies strictly 340px height inside a 356px footer box, stretching 100% wide.
+ * Sits inside a padded container to prevent browser window/scrollbar truncation.
+ * Occupies strictly 340px height inside a 356px box, stretching 100% wide.
  * All resting props align precisely with the desk top surface line (bottom-[32%]).
+ *
+ * Note: This is a decorative/interactive closing scene, NOT the site footer.
+ * The real site footer is rendered in (public)/layout.tsx.
  */
 
 "use client";
@@ -84,10 +87,10 @@ export function FinalScene({ progress: _progress, reducedMotion: _reducedMotion 
   }, []);
 
   return (
-    <footer
+    <section
       ref={rootRef}
       className="study-room relative overflow-hidden w-full"
-      aria-label="Developer Workspace Footer"
+      aria-label="Developer Workspace Scene"
       style={{
         height: "356px",
         paddingInline: "0px",
@@ -170,8 +173,7 @@ export function FinalScene({ progress: _progress, reducedMotion: _reducedMotion 
         </Link>
 
         {/* Plant on shelf (+15% larger) */}
-        <Link
-          href="/privacy"
+        <div
           className="study-prop group absolute right-[20%] bottom-[78%] flex flex-col items-center justify-end z-25"
         >
           <div className="flex gap-[3.5px] mb-[2px]">
@@ -181,42 +183,11 @@ export function FinalScene({ progress: _progress, reducedMotion: _reducedMotion 
           </div>
           <div className="w-[34px] h-[22px] bg-gradient-to-b from-amber-800 to-amber-950 rounded-b-sm border border-neutral-800 shadow" />
           <span className="tooltip absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-[#faf8f5] text-[10px] px-2 py-1 rounded border border-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-            Privacy Policy
+            Shelf Plant
           </span>
-        </Link>
-
-
-        {/* ═══════════ SURFACE 2: WALL DECORATIONS ═══════════ */}
-        {/* Left wall stack (Certificates +20% wider, text enlarged to 12px) */}
-        <div className="absolute left-[3%] top-[10%] flex flex-col gap-2.5 z-20">
-          <Link
-            href="/terms"
-            className="study-prop group w-[86px] h-[32px] bg-[#faf8f5] border border-neutral-700 rounded shadow-md flex items-center justify-center text-[12px] text-neutral-800 font-black hover:bg-neutral-100 px-2"
-          >
-            Terms
-            <span className="tooltip absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-black text-[#faf8f5] text-[10px] px-2 py-1 rounded border border-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Terms of Service
-            </span>
-          </Link>
-          <Link
-            href="/privacy"
-            className="study-prop group w-[86px] h-[32px] bg-[#faf8f5] border border-neutral-700 rounded shadow-md flex items-center justify-center text-[12px] text-neutral-800 font-black hover:bg-neutral-100 px-2"
-          >
-            Privacy
-            <span className="tooltip absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-black text-[#faf8f5] text-[10px] px-2 py-1 rounded border border-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Privacy Policy
-            </span>
-          </Link>
-          <Link
-            href="/terms"
-            className="study-prop group w-[86px] h-[32px] bg-[#faf8f5] border border-neutral-700 rounded shadow-md flex items-center justify-center text-[12px] text-neutral-800 font-black hover:bg-neutral-100 px-2"
-          >
-            Cert
-            <span className="tooltip absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-black text-[#faf8f5] text-[10px] px-2 py-1 rounded border border-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              Certifications
-            </span>
-          </Link>
         </div>
+
+
 
         {/* Right wall stack */}
         {/* Calendar */}
@@ -230,17 +201,16 @@ export function FinalScene({ progress: _progress, reducedMotion: _reducedMotion 
         </div>
 
         {/* Sticky Note */}
-        <Link
-          href="/suggest"
+        <div
           className="study-prop group absolute right-[8.5%] top-[8%] w-[56px] h-[56px] bg-[var(--color-post-it)] border border-neutral-400 rounded flex flex-col justify-center items-center shadow p-1 z-20"
           style={{ transform: "rotateZ(-4deg)" }}
         >
           <div className="w-1.5 h-1.5 bg-red-600 rounded-full absolute top-0.5 shadow" />
           <span className="text-[13px] text-neutral-800 font-black font-mono">Suggest</span>
           <span className="tooltip absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black text-[#faf8f5] text-[10px] px-2 py-1 rounded border border-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-            Suggest Q&A
+            Suggest Q&amp;A
           </span>
-        </Link>
+        </div>
 
         {/* Clock (+35% larger, Text 15px bold, glowing amber contrast) */}
         <div className="absolute right-[3%] top-[55%] w-[98px] h-[35px] border border-neutral-800 bg-[#0c0a09] rounded flex items-center justify-center text-[15px] text-[#f59e0b] font-black font-mono tracking-widest px-0.5 z-20 shadow-inner">
@@ -427,6 +397,6 @@ export function FinalScene({ progress: _progress, reducedMotion: _reducedMotion 
           </div>
         )}
       </div>
-    </footer>
+    </section>
   );
 }

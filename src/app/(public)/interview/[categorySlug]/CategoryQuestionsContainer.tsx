@@ -2,9 +2,14 @@
  * CategoryQuestionsContainer Client Component
  *
  * Manages search filtering and difficulty rating tabs for a folder's questions.
- * Renders a responsive 50/50 split layout:
- * - Left Pane: Sticky Walkthrough Video Player (stacked above on mobile if active)
+ * Renders a responsive split layout:
+ * - Left Pane (Desktop): Sticky VideoPlayerPanel
  * - Right Pane: Interactive Search + Accordion Questions List
+ *
+ * Responsive breakpoints:
+ * - Desktop (lg+): 50/50 split, video sticky
+ * - Tablet (md): 40/60 split, video sticky
+ * - Mobile: Stacked (video above questions)
  *
  * @module app/(public)/interview/[categorySlug]/CategoryQuestionsContainer
  */
@@ -12,17 +17,23 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import { Accordion, Input, Badge, Button, Card } from "@/components/ui";
+import { Accordion, Input, Badge } from "@/components/ui";
 import { Difficulty } from "@/types";
 import { trackEvent } from "@/lib/analytics";
-import { getEmbedUrl } from "@/lib/video/getEmbedUrl";
+import { VideoPlayerPanel } from "./VideoPlayerPanel";
+import { AccordionAnswerContent } from "./AccordionAnswerContent";
+import { usePersonalizedAnswers } from "@/hooks/usePersonalizedAnswers";
 
 interface VideoData {
   label: string;
   url: string;
   provider: string;
   order: number;
+}
+
+interface PersonalizedAnswer {
+  answer: string;
+  updatedAt: string;
 }
 
 interface QuestionData {
@@ -32,11 +43,14 @@ interface QuestionData {
   answer: {
     short?: string;
     detailed: string;
+    example?: string;
   };
   difficulty: Difficulty;
   isPremium: boolean;
   tags: string[];
   videos: VideoData[];
+  resources?: { title: string; url: string }[];
+  personalizedAnswer?: PersonalizedAnswer | null;
 }
 
 interface CategoryData {
@@ -49,25 +63,27 @@ interface CategoryData {
 interface CategoryQuestionsContainerProps {
   category: CategoryData;
   questions: QuestionData[];
+  userHasPremium: boolean;
 }
 
 export function CategoryQuestionsContainer({
   category,
   questions,
+  userHasPremium,
 }: CategoryQuestionsContainerProps) {
   const [search, setSearch] = useState("");
   const [filterDifficulty, setFilterDifficulty] = useState<string>("all");
-
-  // Video player split pane state
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const [activeVideoTab, setActiveVideoTab] = useState<"video" | "explanation" | "notes">("video");
+
+  const { personalizedAnswers } = usePersonalizedAnswers();
 
   // Filter list based on search term & difficulty tab selection
   const filteredQuestions = questions.filter((q) => {
     const matchesSearch =
       q.question.toLowerCase().includes(search.toLowerCase()) ||
       (q.tags && q.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase())));
-      
+
     const matchesDifficulty =
       filterDifficulty === "all" || q.difficulty === filterDifficulty;
 
@@ -75,9 +91,11 @@ export function CategoryQuestionsContainer({
   });
 
   const activeQuestion = questions.find((q) => q._id === activeQuestionId);
-  const activeVideos = activeQuestion?.videos || [];
-  const activeVideo = activeVideos.length > 0 ? activeVideos[activeVideoIndex] : null;
-  const embedInfo = activeVideo ? getEmbedUrl(activeVideo.url) : null;
+  const activeVideos = activeQuestion?.videos.map((v) => ({
+    url: v.url,
+    title: v.label,
+    provider: v.provider,
+  })) || [];
 
   // Map to Accordion items format
   const accordionItems = filteredQuestions.map((q) => {
@@ -85,6 +103,9 @@ export function CategoryQuestionsContainer({
       | "difficulty-easy"
       | "difficulty-medium"
       | "difficulty-hard";
+
+    // Get personalized answer for this question
+    const questionPersonalizedAnswer = personalizedAnswers[q.slug] || q.personalizedAnswer;
 
     return {
       id: q._id,
@@ -102,38 +123,30 @@ export function CategoryQuestionsContainer({
                 🔒 Premium
               </span>
             )}
+            {questionPersonalizedAnswer && (
+              <span
+                className="inline-block px-1.5 py-0.5 text-xs bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/30 wobbly-sm font-bold"
+                aria-label="Has personalized answer"
+              >
+                🎯
+              </span>
+            )}
             <Badge variant={difficultyBadgeVariant}>{q.difficulty}</Badge>
           </div>
         </div>
       ),
       content: (
-        <div className="space-y-4 pt-2">
-          {q.answer.short ? (
-            <p className="text-base text-[var(--color-fg-muted)] leading-relaxed italic bg-[var(--color-bg-alt)]/30 p-4 border border-dashed border-[var(--color-border-light)] wobbly-sm font-[family-name:var(--font-body)]">
-              &ldquo;{q.answer.short}&rdquo;
-            </p>
-          ) : (
-            <p className="text-sm italic text-gray-400 font-[family-name:var(--font-body)]">
-              No preview summary available.
-            </p>
-          )}
-
-          <div className="flex justify-between items-center pt-2">
-            <span className="text-xs text-[var(--color-fg-muted)] font-mono font-[family-name:var(--font-body)]">
-              Tags: {q.tags.length > 0 ? q.tags.join(", ") : "none"}
-            </span>
-
-            <Link href={`/interview/${category.slug}/${q.slug}`}>
-              <Button
-                variant="primary"
-                size="sm"
-                className="font-[family-name:var(--font-heading)] font-bold text-xs"
-              >
-                Read Full Detailed Solution &rarr;
-              </Button>
-            </Link>
-          </div>
-        </div>
+        <AccordionAnswerContent
+          questionId={q._id}
+          slug={q.slug}
+          categorySlug={category.slug}
+          answer={q.answer}
+          isPremium={q.isPremium}
+          userHasPremium={userHasPremium}
+          tags={q.tags}
+          resources={q.resources}
+          personalizedAnswer={questionPersonalizedAnswer}
+        />
       ),
     };
   });
@@ -146,98 +159,19 @@ export function CategoryQuestionsContainer({
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start relative">
-      
-      {/* LEFT PANE: Walkthrough Video Player (Sticky on Desktop, Stacked on Mobile) */}
-      <div className={`w-full lg:sticky lg:top-24 space-y-4 ${!activeQuestionId ? "hidden lg:block" : ""}`}>
-        {activeQuestion && activeVideo ? (
-          <div className="space-y-4 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm p-6 shadow-md">
-            <h3 className="text-xl font-bold font-[family-name:var(--font-heading)] text-[var(--color-fg)] flex items-center gap-2 border-b-2 border-dashed border-[var(--color-border-light)] pb-2">
-              <span>🎥</span>
-              <span>Presenter Walkthrough</span>
-            </h3>
-            <p className="text-xs text-[var(--color-fg-muted)] font-bold font-[family-name:var(--font-body)]">
-              Question: &ldquo;{activeQuestion.question}&rdquo;
-            </p>
+    <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-2 gap-6 lg:gap-8 items-start relative">
 
-            {/* Presenter Tabs (Only if multiple walkthroughs) */}
-            {activeVideos.length > 1 && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {activeVideos.map((vid, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setActiveVideoIndex(idx);
-                      trackEvent("switch_video_presenter", {
-                        questionSlug: activeQuestion.slug,
-                        presenterLabel: vid.label,
-                        url: vid.url,
-                      });
-                    }}
-                    className={[
-                      "px-3 py-1.5 text-xs font-bold font-[family-name:var(--font-heading)] border-2 wobbly-sm transition-all",
-                      activeVideoIndex === idx
-                        ? "bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-accent)]"
-                        : "bg-[var(--color-bg)] text-[var(--color-fg)] border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]",
-                    ].join(" ")}
-                  >
-                    🗣️ {vid.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Embed Video Card */}
-            <Card
-              decoration="none"
-              className="overflow-hidden bg-black aspect-video relative flex items-center justify-center border-2 border-[var(--color-border)] wobbly-sm shadow-inner mt-4"
-            >
-              {embedInfo?.type === "iframe" && (
-                <iframe
-                  src={embedInfo.src}
-                  title={activeVideo.label}
-                  className="absolute inset-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              )}
-
-              {embedInfo?.type === "video" && (
-                <video
-                  src={embedInfo.src}
-                  controls
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-              )}
-
-              {embedInfo?.type === "unsupported" && (
-                <div className="p-6 text-center text-white space-y-2 font-[family-name:var(--font-body)]">
-                  <p className="text-xs">Direct Walkthrough URL:</p>
-                  <a
-                    href={activeVideo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-4 py-2 bg-white text-black font-bold wobbly-sm hover:scale-102 transition-transform text-xs"
-                  >
-                    Open Tutorial &rarr;
-                  </a>
-                </div>
-              )}
-            </Card>
-          </div>
-        ) : activeQuestion ? (
-          <div className="border-2 border-dashed border-[var(--color-border-light)] wobbly-sm p-8 bg-[var(--color-bg)] text-center flex flex-col items-center justify-center h-[340px] text-[var(--color-fg-muted)] space-y-2">
-            <span className="text-4xl">📭</span>
-            <p className="font-[family-name:var(--font-heading)] font-bold text-lg text-[var(--color-fg)]">
-              No Walkthrough Video
-            </p>
-            <p className="text-sm max-w-[280px]">
-              We haven&apos;t uploaded a video walkthrough for this question yet. Check back soon!
-            </p>
-          </div>
+      {/* LEFT PANE: VideoPlayerPanel (Sticky on Desktop, Stacked on Mobile) */}
+      <div className={`w-full md:col-span-2 lg:col-span-1 lg:sticky lg:top-24 space-y-4 ${!activeQuestionId ? "hidden lg:block" : ""}`}>
+        {activeQuestion ? (
+          <VideoPlayerPanel
+            videos={activeVideos}
+            questionTitle={activeQuestion.question}
+            activeTab={activeVideoTab}
+            onTabChange={setActiveVideoTab}
+          />
         ) : (
-          /* Empty/Idle State on desktop */
+          /* Empty/Idle State */
           <div className="border-2 border-dashed border-[var(--color-border-light)] wobbly-sm p-8 bg-[var(--color-bg)] text-center flex flex-col items-center justify-center h-[340px] text-[var(--color-fg-muted)] space-y-4 shadow-sm">
             <div className="text-5xl animate-bounce">📓</div>
             <p className="font-[family-name:var(--font-heading)] font-bold text-lg text-[var(--color-fg)]">
@@ -251,7 +185,7 @@ export function CategoryQuestionsContainer({
       </div>
 
       {/* RIGHT PANE: Search Filters & Accordion List */}
-      <div className="space-y-6">
+      <div className="w-full md:col-span-3 lg:col-span-1 space-y-6">
         {/* Search and Difficulty Filter Controls Panel */}
         <div className="flex flex-col md:flex-row gap-4 items-end bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm p-4 shadow-sm">
           {/* Live Search */}
@@ -316,7 +250,7 @@ export function CategoryQuestionsContainer({
                 if (ids.length > 0) {
                   const expandedId = ids[ids.length - 1];
                   setActiveQuestionId(expandedId);
-                  setActiveVideoIndex(0); // reset presenter selector on expand swap
+                  setActiveVideoTab("video"); // Reset to video tab on expand
                   const matchingQ = questions.find((q) => q._id === expandedId);
                   if (matchingQ) {
                     trackEvent("expand_question", {

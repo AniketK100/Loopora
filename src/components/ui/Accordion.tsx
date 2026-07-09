@@ -43,7 +43,7 @@ export interface AccordionProps {
   /** Controlled: currently expanded item ID(s) */
   expandedIds?: string[];
   /** Callback when expanded state changes */
-  onExpandedChange?: (expandedIds: string[]) => void;
+  onExpandedChange?: (_expandedIds: string[]) => void;
   /** Default expanded item ID (uncontrolled mode) */
   defaultExpandedId?: string;
   /** Additional className for the container */
@@ -153,8 +153,8 @@ interface AccordionItemRowProps {
   item: AccordionItem;
   isExpanded: boolean;
   onToggle: () => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
-  triggerRef: (el: HTMLButtonElement | null) => void;
+  onKeyDown: (_e: React.KeyboardEvent) => void;
+  triggerRef: (_el: HTMLButtonElement | null) => void;
 }
 
 function AccordionItemRow({
