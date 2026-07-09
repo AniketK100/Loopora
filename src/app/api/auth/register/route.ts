@@ -15,6 +15,7 @@ import { User } from "@/lib/db/models/User";
 import { signupSchema } from "@/lib/validators";
 import { checkRateLimit } from "@/lib/auth/rateLimit";
 import { ApiResponse } from "@/types";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 /**
  * POST /api/auth/register
@@ -79,10 +80,18 @@ export async function POST(request: NextRequest) {
       isPremium: false, // Default is free tier
     });
 
+    const userId = newUser._id.toString();
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "user_signed_up",
+      properties: { auth_provider: "credentials" },
+    });
+
     const response: ApiResponse<{ id: string; name: string; email: string }> = {
       success: true,
       data: {
-        id: newUser._id.toString(),
+        id: userId,
         name: newUser.name,
         email: newUser.email,
       },

@@ -13,6 +13,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Card, Badge } from "@/components/ui";
 import { useResumeUpload, type UploadStage } from "@/hooks/useResumeUpload";
+import posthog from "posthog-js";
 
 interface ResumeUploadPanelProps {
   onResumeUploaded?: (_resumeId: string, _contentHash: string) => void;
@@ -92,6 +93,7 @@ export function ResumeUploadPanel({
     if (files && files.length > 0) {
       const result = await uploadResume(files[0]);
       if (result.success && result.resumeId && result.contentHash) {
+        posthog.capture("resume_uploaded", { method: "drag_drop" });
         onResumeUploaded?.(result.resumeId, result.contentHash);
       }
     }
@@ -103,6 +105,7 @@ export function ResumeUploadPanel({
     if (files && files.length > 0) {
       const result = await uploadResume(files[0]);
       if (result.success && result.resumeId && result.contentHash) {
+        posthog.capture("resume_uploaded", { method: "file_picker" });
         onResumeUploaded?.(result.resumeId, result.contentHash);
       }
     }
@@ -239,7 +242,7 @@ export function ResumeUploadPanel({
 
             {/* Suggestions */}
             {latestResume.suggestions?.length > 0 && (
-              <div className="bg-amber-50/50 p-3 border border-amber-200 text-xs space-y-1">
+              <div className="bg-amber-50/50 p-3 border border-amber-200 text-xs space-y-1 ph-no-autocapture">
                 <div className="font-bold text-amber-800">Suggestions:</div>
                 {latestResume.suggestions.slice(0, 3).map((s, i) => (
                   <div key={i} className="text-amber-700">• {s}</div>

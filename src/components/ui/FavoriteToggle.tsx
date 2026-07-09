@@ -17,6 +17,7 @@ import { Pin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 
 interface FavoriteToggleProps {
   questionId: string;
@@ -71,9 +72,15 @@ export function FavoriteToggle({
         setIsFavorited(previousState);
       } else {
         setIsFavorited(json.data.isFavorited);
+        if (json.data.isFavorited) {
+          posthog.capture("question_favorited", { question_id: questionId });
+        } else {
+          posthog.capture("question_unfavorited", { question_id: questionId });
+        }
       }
     } catch (err) {
       console.error("[FavoriteToggle] Failed to toggle favorite:", err);
+      posthog.captureException(err);
       setIsFavorited(previousState);
     } finally {
       setLoading(false);

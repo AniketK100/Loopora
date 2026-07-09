@@ -211,7 +211,7 @@ function SearchPageContent() {
         </Card>
 
         {/* Search Input Box */}
-        <div className="bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm p-4">
+        <div className="bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm p-4 ph-no-autocapture">
           <Input
             placeholder="Type key terms, e.g. recursion, database, behavioral..."
             value={query}

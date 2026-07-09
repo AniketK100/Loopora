@@ -11,9 +11,12 @@
 import React from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui";
+import posthog from "posthog-js";
 
 export function PublicSignOutButton() {
   const handleLogout = async () => {
+    posthog.capture("user_signed_out");
+    posthog.reset();
     await signOut({ callbackUrl: "/" });
   };
 

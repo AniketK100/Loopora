@@ -17,6 +17,7 @@ import { CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 
 interface PracticedToggleProps {
   questionId: string;
@@ -71,9 +72,15 @@ export function PracticedToggle({
         setIsPracticed(previousState);
       } else {
         setIsPracticed(json.data.isPracticed);
+        if (json.data.isPracticed) {
+          posthog.capture("question_practiced", { question_id: questionId });
+        } else {
+          posthog.capture("question_unpracticed", { question_id: questionId });
+        }
       }
     } catch (err) {
       console.error("[PracticedToggle] Failed to toggle practiced status:", err);
+      posthog.captureException(err);
       setIsPracticed(previousState);
     } finally {
       setLoading(false);

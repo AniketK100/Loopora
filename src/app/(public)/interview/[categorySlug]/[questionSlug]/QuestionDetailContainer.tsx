@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Card, Button, Badge, FavoriteToggle, PracticedToggle } from "@/components/ui";
 import { trackEvent } from "@/lib/analytics";
 import { getEmbedUrl } from "@/lib/video/getEmbedUrl";
+import posthog from "posthog-js";
 
 interface VideoData {
   label: string;
@@ -58,6 +59,18 @@ export function QuestionDetailContainer({
 }: QuestionDetailContainerProps) {
   // Paywall check: premium questions are locked if user does not have premium status
   const isLocked = question.isPremium && !userHasPremium;
+
+  useEffect(() => {
+    if (isLocked) {
+      posthog.capture("premium_paywall_encountered", {
+        question_slug: question.slug,
+        category: categoryName,
+        difficulty: question.difficulty,
+      });
+    }
+  // Only fire once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Personalization hooks
   interface ResumeMetadata {
@@ -146,9 +159,14 @@ export function QuestionDetailContainer({
         setSuggestionError(data.error || "Failed to submit suggestion.");
       } else {
         setSuggestionSuccess("Thank you! Your feedback has been queued for review.");
+        posthog.capture("suggestion_submitted", {
+          question_slug: question.slug,
+          category: categoryName,
+        });
         setNotes("");
       }
-    } catch {
+    } catch (err) {
+      posthog.captureException(err);
       setSuggestionError("A network error occurred. Please try again.");
     } finally {
       setIsSending(false);
@@ -245,7 +263,7 @@ export function QuestionDetailContainer({
             )}
 
             {personalizedAnswer && (
-              <div className="border-2 border-[var(--color-border)] wobbly-sm p-6 bg-[#faf6ef] relative overflow-hidden" style={{ boxShadow: "var(--shadow-default)" }}>
+              <div className="border-2 border-[var(--color-border)] wobbly-sm p-6 bg-[#faf6ef] relative overflow-hidden ph-no-autocapture" style={{ boxShadow: "var(--shadow-default)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Badge variant="success">✓ Personalized to your resume</Badge>
                   {latestResume && (
@@ -384,7 +402,7 @@ export function QuestionDetailContainer({
         )}
 
         <form onSubmit={handleSuggestionSubmit} className="space-y-4">
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 ph-no-autocapture">
             <textarea
               rows={3}
               required

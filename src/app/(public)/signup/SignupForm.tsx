@@ -14,6 +14,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input, Card } from "@/components/ui";
+import posthog from "posthog-js";
 
 export function SignupForm() {
   const router = useRouter();
@@ -48,7 +49,8 @@ export function SignupForm() {
       }
 
       setSuccess("Account created successfully! Redirecting to sign in...");
-      
+      posthog.capture("signup_completed");
+
       // Auto-redirect to sign in after 2 seconds
       setTimeout(() => {
         router.push("/login?callbackUrl=/");
@@ -83,35 +85,41 @@ export function SignupForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Your Name"
-          type="text"
-          required
-          placeholder="John Doe"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          disabled={isLoading || !!success}
-        />
+        <div className="ph-no-autocapture">
+          <Input
+            label="Your Name"
+            type="text"
+            required
+            placeholder="John Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={isLoading || !!success}
+          />
+        </div>
 
-        <Input
-          label="Email Address"
-          type="email"
-          required
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={isLoading || !!success}
-        />
+        <div className="ph-no-autocapture">
+          <Input
+            label="Email Address"
+            type="email"
+            required
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading || !!success}
+          />
+        </div>
 
-        <Input
-          label="Password"
-          type="password"
-          required
-          placeholder="Minimum 8 characters"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isLoading || !!success}
-        />
+        <div className="ph-no-autocapture">
+          <Input
+            label="Password"
+            type="password"
+            required
+            placeholder="Minimum 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading || !!success}
+          />
+        </div>
 
         <Button type="submit" variant="primary" fullWidth isLoading={isLoading} disabled={!!success}>
           Create Account

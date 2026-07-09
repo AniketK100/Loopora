@@ -11,10 +11,12 @@
 import React from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui";
+import posthog from "posthog-js";
 
 export function SignOutButton() {
   const handleLogout = async () => {
-    // Log out and redirect back to home page
+    posthog.capture("user_signed_out");
+    posthog.reset();
     await signOut({ callbackUrl: "/" });
   };
 

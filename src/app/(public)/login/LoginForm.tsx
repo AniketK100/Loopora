@@ -14,6 +14,7 @@ import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button, Input, Card } from "@/components/ui";
+import posthog from "posthog-js";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -44,6 +45,7 @@ export function LoginForm() {
         setError("Invalid email or password. Please try again.");
         setIsLoading(false);
       } else {
+        posthog.capture("user_logged_in", { method: "credentials" });
         // Success! Perform full reload to update layouts and router state
         window.location.href = callbackUrl;
       }
@@ -71,25 +73,29 @@ export function LoginForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Email Address"
-          type="email"
-          required
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={isLoading}
-        />
+        <div className="ph-no-autocapture">
+          <Input
+            label="Email Address"
+            type="email"
+            required
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
 
-        <Input
-          label="Password"
-          type="password"
-          required
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isLoading}
-        />
+        <div className="ph-no-autocapture">
+          <Input
+            label="Password"
+            type="password"
+            required
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
 
         <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
           Sign In

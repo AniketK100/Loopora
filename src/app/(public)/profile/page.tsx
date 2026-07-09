@@ -19,6 +19,7 @@ import { useSession, signOut } from "next-auth/react";
 import { Card, Input, Button, Badge, Accordion } from "@/components/ui";
 import { QuestionListItem, User } from "@/types";
 import { trackEvent } from "@/lib/analytics";
+import posthog from "posthog-js";
 
 export default function ProfilePage() {
   const { data: session, status, update: updateSession } = useSession();
@@ -213,6 +214,8 @@ export default function ProfilePage() {
 
       if (json.success) {
         trackEvent("delete_account");
+        posthog.capture("account_deleted");
+        posthog.reset();
         alert("Your account has been deleted. Logging you out...");
         signOut({ callbackUrl: "/" });
       } else {
@@ -548,27 +551,33 @@ export default function ProfilePage() {
                     Update Password
                   </h3>
                   <form onSubmit={handlePasswordUpdate} className="space-y-4">
-                    <Input
-                      label="Current Password"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="••••••••"
-                    />
-                    <Input
-                      label="New Password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="At least 8 characters"
-                    />
-                    <Input
-                      label="Confirm New Password"
-                      type="password"
-                      value={passwordConfirm}
-                      onChange={(e) => setPasswordConfirm(e.target.value)}
-                      placeholder="••••••••"
-                    />
+                    <div className="ph-no-autocapture">
+                      <Input
+                        label="Current Password"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="ph-no-autocapture">
+                      <Input
+                        label="New Password"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="At least 8 characters"
+                      />
+                    </div>
+                    <div className="ph-no-autocapture">
+                      <Input
+                        label="Confirm New Password"
+                        type="password"
+                        value={passwordConfirm}
+                        onChange={(e) => setPasswordConfirm(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                    </div>
                     {passError && <p className="text-sm text-[var(--color-accent)] font-bold">{passError}</p>}
                     {passSuccess && <p className="text-sm text-[var(--color-success)] font-bold">{passSuccess}</p>}
                     <Button type="submit" variant="primary" disabled={passUpdating}>
