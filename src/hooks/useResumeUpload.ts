@@ -10,6 +10,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { trackEvent } from "@/lib/analytics";
 
 interface ResumeMetadata {
@@ -84,6 +85,7 @@ interface UseResumeUploadReturn {
   maxResumes: number;
   isPremium: boolean;
   canUpload: boolean;
+  isAuthenticated: boolean;
   uploadResume: (_file: File) => Promise<UploadResult>;
   setActiveResume: (_resumeId: string) => Promise<boolean>;
   deleteResume: (_resumeId: string) => Promise<boolean>;
@@ -105,6 +107,9 @@ const STAGE_LABELS: Record<UploadStage, string> = {
 };
 
 export function useResumeUpload(): UseResumeUploadReturn {
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user?.id;
+
   const [resumes, setResumes] = useState<ResumeMetadata[]>([]);
   const [latestResume, setLatestResume] = useState<ResumeMetadata | null>(null);
   const [resumeAnalysis, setResumeAnalysis] = useState<ResumeAnalysis | null>(null);
@@ -168,6 +173,15 @@ export function useResumeUpload(): UseResumeUploadReturn {
     setUploadErrorType(null);
     setUploadSuccess(null);
 
+    // Auth check
+    if (!isAuthenticated) {
+      const errorMsg = "Please log in to upload your resume.";
+      setUploadError(errorMsg);
+      setUploadErrorType("auth_required");
+      setUploadStage("error");
+      return { success: false, error: errorMsg, errorType: "auth_required" };
+    }
+
     // Client-side validation
     const validationError = validateFile(file);
     if (validationError) {
@@ -228,7 +242,12 @@ export function useResumeUpload(): UseResumeUploadReturn {
       };
     } catch (err) {
       console.error("[useResumeUpload] Upload error:", err);
-      const errorMsg = "Network error. Please try again.";
+      let errorMsg = "Upload failed. Please try again.";
+      if (err instanceof TypeError && err.message.includes("fetch")) {
+        errorMsg = "Network error. Please check your connection and try again.";
+      } else if (err instanceof Error) {
+        errorMsg = err.message;
+      }
       setUploadError(errorMsg);
       setUploadErrorType("network_error");
       setUploadStage("error");
@@ -236,7 +255,7 @@ export function useResumeUpload(): UseResumeUploadReturn {
     } finally {
       setIsUploading(false);
     }
-  }, [refreshResumes]);
+  }, [refreshResumes, isAuthenticated]);
 
   const setActiveResume = useCallback(async (resumeId: string): Promise<boolean> => {
     try {
@@ -246,9 +265,11 @@ export function useResumeUpload(): UseResumeUploadReturn {
         await refreshResumes();
         return true;
       }
+      setUploadError(json.error || json.message || "Failed to set active resume.");
       return false;
     } catch (err) {
       console.error("[useResumeUpload] Failed to set active:", err);
+      setUploadError("Network error. Please try again.");
       return false;
     }
   }, [refreshResumes]);
@@ -261,10 +282,11 @@ export function useResumeUpload(): UseResumeUploadReturn {
         await refreshResumes();
         return true;
       }
-      setUploadError(json.error || "Failed to delete resume.");
+      setUploadError(json.error || json.message || "Failed to delete resume.");
       return false;
     } catch (err) {
       console.error("[useResumeUpload] Failed to delete:", err);
+      setUploadError("Network error. Please try again.");
       return false;
     }
   }, [refreshResumes]);
@@ -281,10 +303,11 @@ export function useResumeUpload(): UseResumeUploadReturn {
         await refreshResumes();
         return true;
       }
-      setUploadError(json.error || "Failed to rename resume.");
+      setUploadError(json.error || json.message || "Failed to rename resume.");
       return false;
     } catch (err) {
       console.error("[useResumeUpload] Failed to rename:", err);
+      setUploadError("Network error. Please try again.");
       return false;
     }
   }, [refreshResumes]);
@@ -311,6 +334,7 @@ export function useResumeUpload(): UseResumeUploadReturn {
     maxResumes,
     isPremium,
     canUpload,
+    isAuthenticated,
     uploadResume,
     setActiveResume,
     deleteResume,

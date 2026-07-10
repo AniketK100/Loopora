@@ -28,6 +28,16 @@ const nextConfig: NextConfig = {
     ];
   },
   skipTrailingSlashRedirect: true,
+
+  /**
+   * Keep heavy / native Node modules external to the server bundle.
+   * Bundling @google/genai, pdf-parse, or pdfjs-dist can break at runtime in
+   * serverless environments (Vercel) while working locally — producing an
+   * uncaught 500 on routes that import them. Requiring them from node_modules
+   * at runtime avoids that and matches local behaviour.
+   */
+  serverExternalPackages: ["@google/genai", "pdf-parse", "pdfjs-dist", "mongoose", "mongodb"],
+
   /**
    * Remote image patterns for next/image optimization.
    * Only allow known, trusted image sources.

@@ -11,6 +11,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
+import Link from "next/link";
 import { Card, Badge } from "@/components/ui";
 import { useResumeUpload, type UploadStage } from "@/hooks/useResumeUpload";
 import posthog from "posthog-js";
@@ -54,6 +55,7 @@ export function ResumeUploadPanel({
     maxResumes,
     isPremium,
     canUpload,
+    isAuthenticated,
     uploadResume,
     setActiveResume: _setActiveResume,
     deleteResume: _deleteResume,
@@ -61,6 +63,7 @@ export function ResumeUploadPanel({
   } = useResumeUpload();
 
   const [dragOver, setDragOver] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -80,6 +83,11 @@ export function ResumeUploadPanel({
     e.stopPropagation();
     setDragOver(false);
 
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     if (!canUpload) {
       if (!isPremium) {
         onShowPremiumModal?.();
@@ -97,7 +105,7 @@ export function ResumeUploadPanel({
         onResumeUploaded?.(result.resumeId, result.contentHash);
       }
     }
-  }, [canUpload, isPremium, uploadResume, onResumeUploaded, onShowPremiumModal, onShowResumeManager]);
+  }, [isAuthenticated, canUpload, isPremium, uploadResume, onResumeUploaded, onShowPremiumModal, onShowResumeManager]);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     clearMessages();
@@ -115,6 +123,10 @@ export function ResumeUploadPanel({
   }, [uploadResume, onResumeUploaded, clearMessages]);
 
   const handleClick = useCallback(() => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
     if (!canUpload) {
       if (!isPremium) {
         onShowPremiumModal?.();
@@ -125,7 +137,7 @@ export function ResumeUploadPanel({
     }
     clearMessages();
     fileInputRef.current?.click();
-  }, [canUpload, isPremium, clearMessages, onShowPremiumModal, onShowResumeManager]);
+  }, [isAuthenticated, canUpload, isPremium, clearMessages, onShowPremiumModal, onShowResumeManager]);
 
   const progressIndex = PROGRESS_STAGES.indexOf(uploadStage);
   const progressPercent = isUploading
@@ -133,6 +145,7 @@ export function ResumeUploadPanel({
     : uploadStage === "complete" ? 100 : 0;
 
   return (
+    <>
     <Card className="p-6">
       <div className="space-y-4">
         {/* Header */}
@@ -352,6 +365,14 @@ export function ResumeUploadPanel({
                 Manage
               </button>
             )}
+            {uploadErrorType === "auth_required" && (
+              <Link
+                href="/login?callbackUrl=/interview"
+                className="underline text-[var(--color-accent)]"
+              >
+                Log In
+              </Link>
+            )}
           </div>
         )}
         {uploadSuccess && (
@@ -362,5 +383,40 @@ export function ResumeUploadPanel({
         )}
       </div>
     </Card>
+
+    {/* Auth Modal */}
+    {showAuthModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-[var(--color-surface)] rounded-xl p-6 max-w-sm w-full mx-4 border border-[var(--color-border)] shadow-2xl">
+          <h3 className="text-lg font-bold font-[family-name:var(--font-heading)] text-[var(--color-fg)] mb-2">
+            Log in to upload your resume
+          </h3>
+          <p className="text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] mb-6">
+            You need an account to securely store and manage your resume for personalized interview answers.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/login?callbackUrl=/interview"
+              className="w-full text-center px-4 py-2.5 rounded-lg bg-[var(--color-primary)] text-white font-semibold font-[family-name:var(--font-body)] hover:opacity-90 transition-opacity"
+            >
+              Log In
+            </Link>
+            <Link
+              href="/signup?callbackUrl=/interview"
+              className="w-full text-center px-4 py-2.5 rounded-lg border border-[var(--color-border)] text-[var(--color-fg)] font-semibold font-[family-name:var(--font-body)] hover:bg-[var(--color-surface-alt)] transition-colors"
+            >
+              Sign Up Free
+            </Link>
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] hover:text-[var(--color-fg)] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

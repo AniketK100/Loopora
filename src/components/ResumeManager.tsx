@@ -65,9 +65,18 @@ export function ResumeManager({
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   const handleDelete = async (id: string) => {
+    const resume = resumes.find((r) => r._id === id);
+    if (!resume) return;
+
+    const confirmed = window.confirm(
+      `Delete "${resume.displayName || resume.originalFilename}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
     setDeletingId(id);
-    await onDelete(id);
+    const success = await onDelete(id);
     setDeletingId(null);
+    return success;
   };
 
   const handleSetActive = async (id: string) => {
@@ -200,8 +209,7 @@ export function ResumeManager({
                       {activatingId === resume._id ? "Setting..." : "Set Active"}
                     </Button>
                   )}
-                  {resumes.length > 1 && (
-                    <Button
+                  <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(resume._id)}
@@ -210,7 +218,6 @@ export function ResumeManager({
                     >
                       {deletingId === resume._id ? "..." : "Delete"}
                     </Button>
-                  )}
                 </div>
               </div>
 

@@ -45,7 +45,9 @@ export function validateMagicBytes(
 
   // PDF magic bytes: %PDF- (25 50 44 46)
   if (hex.startsWith("25504446")) {
-    if (declaredMime !== "application/pdf") {
+    // Accept empty MIME type (browsers may not always set it)
+    // but reject mismatched non-empty MIME types
+    if (declaredMime && declaredMime !== "application/pdf") {
       return {
         isValid: false,
         sniffedMime: "application/pdf",

@@ -1,7 +1,7 @@
 /**
  * Resume Management API Route
  *
- * DELETE /api/resume/[id] — Delete a resume (cannot delete the last active one)
+ * DELETE /api/resume/[id] — Delete a resume (cannot delete the last one)
  * PATCH /api/resume/[id] — Set active or rename a resume
  *   Body: { action: "set_active" } or { action: "rename", displayName: string }
  *
@@ -13,6 +13,8 @@ import mongoose from "mongoose";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db/connection";
 import { Resume } from "@/lib/db/models/Resume";
+import { ResumeAnalysis } from "@/lib/db/models/ResumeAnalysis";
+import { PersonalizedAnswer } from "@/lib/db/models/PersonalizedAnswer";
 import { AuditLog } from "@/lib/db/models/AuditLog";
 
 interface RouteParams {
@@ -110,24 +112,28 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Resume not found or access denied." }, { status: 404 });
     }
 
-    // Prevent deleting the last clean resume
-    const cleanCount = await Resume.countDocuments({ user: userId, status: "clean" });
-    if (cleanCount <= 1) {
-      return NextResponse.json(
-        { error: "Cannot delete the last resume. Upload a new one first." },
-        { status: 400 }
-      );
-    }
+    // Note: Deleting the last/only resume IS permitted — this is the required
+    // "replace" flow (delete old, then upload new). No permanent guard is applied.
 
     const wasActive = resume.isActive;
     await Resume.findByIdAndDelete(id);
 
+    // Auto-activate another resume if the deleted one was active
     if (wasActive) {
       const mostRecent = await Resume.findOne({ user: userId, status: "clean" }).sort({ createdAt: -1 });
       if (mostRecent) {
         mostRecent.isActive = true;
         await mostRecent.save();
       }
+    }
+
+    // Cleanup: remove this user's personalized answers tied to the deleted resume
+    await PersonalizedAnswer.deleteMany({ user: userId, resumeContentHash: resume.contentHash });
+
+    // Cleanup: remove the shared analysis only if no other resume (any user) reuses it
+    const otherResumes = await Resume.countDocuments({ contentHash: resume.contentHash, _id: { $ne: resume._id } });
+    if (otherResumes === 0) {
+      await ResumeAnalysis.deleteOne({ contentHash: resume.contentHash });
     }
 
     await AuditLog.create({

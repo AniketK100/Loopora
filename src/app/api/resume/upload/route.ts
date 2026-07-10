@@ -21,9 +21,14 @@ import { AuditLog } from "@/lib/db/models/AuditLog";
 import { User } from "@/lib/db/models/User";
 import { validateMagicBytes } from "@/lib/validators/fileSniffer";
 import { scanContent, scanPdfBuffer } from "@/lib/validators/contentSecurity";
-import { extractTextAndPageCount } from "@/lib/utils/resumeParser";
 import { classifyByHeuristics } from "@/lib/classification/resumeClassifier";
 import { getAIService } from "@/lib/ai/provider";
+
+// NOTE: The PDF parser (pdfjs-dist) is imported lazily inside the handler.
+// Eagerly importing it at module scope can throw at import time in some
+// serverless runtimes (e.g. Vercel), which would crash the entire route
+// module and return a raw 500 for every request. Deferring the import keeps
+// the route module loadable so auth/limits work and parse errors are caught.
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_PAGES = 8;
@@ -139,10 +144,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 8: Extract text and page count
+    // Step 8: Extract text and page count (lazy import — see top of file)
     let extractedText = "";
     let pageCount = 1;
     try {
+      const { extractTextAndPageCount } = await import("@/lib/utils/resumeParser");
       const parsed = await extractTextAndPageCount(buffer, snifferResult.sniffedMime);
       extractedText = parsed.text;
       pageCount = parsed.pageCount;

@@ -4,31 +4,43 @@
  * Implements the AIService interface using the official @google/genai SDK.
  * Reads API key strictly from environment variables.
  *
+ * NOTE: The @google/genai SDK is imported LAZILY (inside ensureAi) rather than
+ * at module scope. This guarantees the route modules that pull in this service
+ * (e.g. /api/resume/upload) load cleanly in serverless runtimes (Vercel) even
+ * if the heavy SDK has any import-time side effects, so auth/limits work and
+ * any AI import failure is caught and returned as a 503 instead of crashing
+ * the whole route with an uncaught 500.
+ *
  * @module lib/ai/gemini
  */
 
-import { GoogleGenAI } from "@google/genai";
 import { AIService, ResumeAnalysisSummary, ClassificationResult, QualityResult } from "./types";
 
 export class GeminiService implements AIService {
-  private ai: GoogleGenAI;
+  private ai: import("@google/genai").GoogleGenAI | null = null;
   private modelName = "gemini-2.5-flash";
 
-  constructor() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing GEMINI_API_KEY environment variable.");
+  private async ensureAi(): Promise<import("@google/genai").GoogleGenAI> {
+    if (!this.ai) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Missing GEMINI_API_KEY environment variable.");
+      }
+      // Lazy-load the heavy SDK only when actually needed.
+      const { GoogleGenAI } = await import("@google/genai");
+      this.ai = new GoogleGenAI({ apiKey });
     }
-    this.ai = new GoogleGenAI({ apiKey });
+    return this.ai;
   }
 
   async analyzeResume(extractedText: string): Promise<ResumeAnalysisSummary> {
+    const ai = await this.ensureAi();
     const prompt = `You are an expert ATS (Applicant Tracking System) parser. Analyze the following resume text and extract the target role, key skills, and total estimated years of professional experience.
 
     Resume Text:
     ${extractedText}`;
 
-    const response = await this.ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: this.modelName,
       contents: prompt,
       config: {
@@ -54,6 +66,7 @@ export class GeminiService implements AIService {
   }
 
   async classifyDocument(extractedText: string): Promise<ClassificationResult> {
+    const ai = await this.ensureAi();
     const prompt = `You are a document classifier. Analyze the following text and determine if it is a resume/CV.
 
     Return:
@@ -65,7 +78,7 @@ export class GeminiService implements AIService {
     Text to classify:
     ${extractedText.substring(0, 5000)}`;
 
-    const response = await this.ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: this.modelName,
       contents: prompt,
       config: {
@@ -92,6 +105,7 @@ export class GeminiService implements AIService {
   }
 
   async analyzeResumeQuality(extractedText: string): Promise<QualityResult> {
+    const ai = await this.ensureAi();
     const prompt = `You are a professional resume reviewer. Analyze the following resume and provide:
     - score: a quality score from 0 to 100
     - missingSections: an array of important sections that are missing (e.g., "contact_info", "education", "experience", "skills", "projects", "summary", "certifications")
@@ -100,7 +114,7 @@ export class GeminiService implements AIService {
     Resume Text:
     ${extractedText.substring(0, 8000)}`;
 
-    const response = await this.ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: this.modelName,
       contents: prompt,
       config: {
@@ -132,9 +146,10 @@ export class GeminiService implements AIService {
     sampleAnswer: string,
     resumeExtractedText: string
   ): Promise<string> {
+    const ai = await this.ensureAi();
     const prompt = `You are a premium career coach helping a candidate prepare for an interview.
     Given the interview question and its canonical sample answer, personalize the response based on the candidate's resume.
-    Highlight how their background, projects, or specific skills mentioned in their resume make them an excellent fit.
+    Highlight how their background, projects, or specific skills mentioned in their resume seamlessly make them an excellent fit.
 
     Requirements:
     1. Speak in the first person ("I", "my").
@@ -151,7 +166,7 @@ export class GeminiService implements AIService {
     Candidate Resume Context:
     ${resumeExtractedText}`;
 
-    const response = await this.ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: this.modelName,
       contents: prompt,
     });
