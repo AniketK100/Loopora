@@ -10,6 +10,11 @@
  * @route POST /api/resume/upload
  */
 
+// CRITICAL: Load browser global polyfills (DOMMatrix, Path2D, etc.) BEFORE
+// any module that imports pdfjs-dist/pdf-parse. These globals are required
+// by pdfjs-dist but missing in Node.js serverless runtimes (Vercel).
+import "@/lib/utils/pdfPolyfills";
+
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import crypto from "crypto";

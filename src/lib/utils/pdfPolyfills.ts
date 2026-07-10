@@ -79,3 +79,5 @@ if (typeof G.createImageData === "undefined") {
     return { width: sw, height: sh, data: new Uint8ClampedArray(sw * sh * 4), colorSpace: "srgb" }; 
   };
 }
+
+export const pdfPolyfillsLoaded = true;
