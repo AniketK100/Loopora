@@ -41,6 +41,8 @@ const patrickHand = Patrick_Hand({
   display: "swap",
 });
 
+const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
   title: {
     default: "Loopora — Ace Every Interview Question",
@@ -50,14 +52,19 @@ export const metadata: Metadata = {
     "Structured interview preparation with 500+ frequently asked questions, " +
     "written model answers, and real video explanations across HR, Technical, " +
     "Situational, and more interview types.",
-  metadataBase: new URL(
-    process.env.NEXTAUTH_URL ?? "http://localhost:3000"
-  ),
+  metadataBase: new URL(baseUrl),
+  alternates: {
+    languages: {
+      en: "/",
+      "x-default": "/",
+    },
+  },
   openGraph: {
     type: "website",
     siteName: "Loopora",
     title: "Loopora — Ace Every Interview Question",
     description: "Structured interview preparation with curated Q&As and real video walkthroughs.",
+    url: "/",
     images: [
       {
         url: "/og-image.png",

@@ -134,21 +134,26 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
 
         <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
           <div className="max-w-7xl mx-auto px-4 space-y-6">
-            <p className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)]">
-              Loopora - The Hand-Drawn Notebook for Interview Success.
-            </p>
+            <div className="space-y-2">
+              <p className="font-bold font-[family-name:var(--font-heading)] text-2xl text-[var(--color-fg)]">
+                Loopora
+              </p>
+              <p className="text-sm max-w-md mx-auto">
+                The hand-drawn notebook for interview success. Curated questions, model answers, and video walkthroughs to help you ace every interview.
+              </p>
+            </div>
             <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-xs font-[family-name:var(--font-heading)] font-bold">
               <Link
                 href="/interview"
                 className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-bg)] transition-colors"
               >
-                Library Folder
+                Questions Library
               </Link>
               <Link
-                href="/suggest"
+                href="/search"
                 className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-post-it-dark)] hover:text-[var(--color-fg)] transition-colors"
               >
-                Suggest Q&A
+                Search
               </Link>
               <Link
                 href="/privacy"
@@ -168,8 +173,18 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
               >
                 Cookie Policy
               </Link>
+              <a
+                href="https://github.com/AniketK100/Loopora"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
+              >
+                GitHub
+              </a>
             </div>
-            <p className="text-xs">&copy; {new Date().getFullYear()} Loopora. Made for interview prep.</p>
+            <div className="flex flex-col items-center gap-1 text-xs">
+              <p>&copy; {new Date().getFullYear()} Loopora. Built by <a href="https://github.com/AniketK100" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--color-accent)]">Aniket Kakad</a>.</p>
+            </div>
           </div>
         </footer>
         <CookieConsent />
