@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  skipTrailingSlashRedirect: false,
+  skipTrailingSlashRedirect: true,
   /**
    * Remote image patterns for next/image optimization.
    * Only allow known, trusted image sources.
