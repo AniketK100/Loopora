@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.1.0] - 2026-07-10 — Final Production Hardening
+
+### Security
+- **Premium content enforcement**: `GET /api/questions/[id]` now checks `isPremium` flag — free users receive only a preview (question text, short answer, difficulty, tags) instead of full detailed answer. Backend-gated, not frontend-hidden.
+- **Error handling lockdown**: All 26 API routes now return generic `"Internal Server Error"` to clients. Real error details are logged server-side only. This prevents Mongoose schema leaks, stack traces, and internal file paths from reaching production responses.
+- **Rate limiting expanded**: Added DB-backed rate limiting to resume upload (5/min/user), search (30/min/IP), and personalized AI answers (10/min/user) — previously only register, login, and suggestions were rate-limited.
+- **NoSQL injection prevention**: `difficulty` filter in `GET /api/questions` now validates against strict enum (`easy|medium|hard`) before being passed to MongoDB. Query parameter-based operator injection is blocked.
+- **HSTS header**: Added `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` to all production responses.
+- **Debug logs removed**: Stripped `console.log` statements from auth.ts authorize callback that leaked rate limit and validation details.
+
+### SEO
+- **JSON-LD structured data**: Added WebSite, Organization, and WebApplication schema markup with `SearchAction` to root layout.
+- **README**: Expanded with security architecture section, premium features comparison, production deployment guide, and performance optimization table.
+
+### Cleanup
+- Removed `atlas_backup_production/`, `migration_dump/`, `migration_dump_atlas_backup/` directories (regenerable from MongoDB Atlas).
+- Removed `posthog-setup-report.md` (temporary document).
+- Removed `scratches/` directory.
+- Removed unused `scripts/create-admin.ts` (functionality covered by admin panel).
+
 ## [2.0.0] - 2026-07-09 — Production Ready (MongoDB Atlas)
 
 ### Changed

@@ -82,9 +82,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   } catch (error) {
     console.error("[Practiced API] Error toggling practiced status:", error);
-    const message = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }

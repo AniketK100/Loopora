@@ -37,14 +37,12 @@ export async function GET() {
       { status: 200 }
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown database error";
-
+    console.error("[Health API] Error:", error);
     return NextResponse.json(
       {
         status: "error",
         db: getConnectionStatus(),
-        error: message,
+        error: "Internal Server Error",
         timestamp: new Date().toISOString(),
       },
       { status: 503 }

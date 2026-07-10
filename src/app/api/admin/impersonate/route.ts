@@ -110,9 +110,9 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[Admin Impersonate] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }

@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
@@ -39,10 +40,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     let question = null;
 
     if (objectIdSchema.safeParse(id).success) {
-      // 1. Direct MongoDB ID search
       question = await Question.findById(id).populate("category", "name slug type");
     } else if (id.includes(":")) {
-      // 2. Compound categorySlug:questionSlug search
       const [categorySlug, questionSlug] = id.split(":");
       const category = await Category.findOne({ slug: categorySlug.toLowerCase() });
       
@@ -61,10 +60,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Increment view counter asynchronously (no await) for analytics
+    // Increment view counter asynchronously
     Question.findByIdAndUpdate(question._id, { $inc: { viewCount: 1 } }).catch(
       (err) => console.error("[DB] Failed to increment viewCount:", err)
     );
+
+    // Premium content gate — free users get a preview only
+    if (question.isPremium) {
+      const session = await auth();
+      const isPremiumUser = !!(session?.user && (session.user as { isPremium?: boolean }).isPremium);
+
+      if (!isPremiumUser) {
+        const questionObj = question.toObject();
+        return NextResponse.json({
+          success: true,
+          data: {
+            _id: questionObj._id,
+            category: questionObj.category,
+            slug: questionObj.slug,
+            question: questionObj.question,
+            difficulty: questionObj.difficulty,
+            tags: questionObj.tags,
+            isPremium: true,
+            viewCount: questionObj.viewCount,
+            answer: {
+              short: questionObj.answer?.short || null,
+            },
+          },
+        }, { status: 200 });
+      }
+    }
 
     const response: ApiResponse<typeof question> = {
       success: true,
@@ -73,9 +98,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[Questions GET] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }
@@ -192,9 +217,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[Questions PATCH] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }
@@ -242,9 +267,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[Questions DELETE] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }

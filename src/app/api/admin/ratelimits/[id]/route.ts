@@ -52,9 +52,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[Admin RateLimits DELETE] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }

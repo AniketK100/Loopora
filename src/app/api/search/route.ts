@@ -12,9 +12,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connection";
 import { Question } from "@/lib/db/models/Question";
 import { PaginatedResponse, QuestionListItem } from "@/types";
+import { checkRateLimit } from "@/lib/auth/rateLimit";
 
 export async function GET(request: NextRequest) {
   try {
+    const rateLimit = await checkRateLimit(request, "search", 30, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many search requests. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     await connectDB();
 
     const { searchParams } = request.nextUrl;
@@ -107,9 +116,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
     console.error("[Search API] Error searching questions:", error);
-    const message = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }

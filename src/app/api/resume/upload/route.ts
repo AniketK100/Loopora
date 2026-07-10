@@ -28,6 +28,7 @@ import { validateMagicBytes } from "@/lib/validators/fileSniffer";
 import { scanContent, scanPdfBuffer } from "@/lib/validators/contentSecurity";
 import { classifyByHeuristics } from "@/lib/classification/resumeClassifier";
 import { getAIService } from "@/lib/ai/provider";
+import { checkRateLimit } from "@/lib/auth/rateLimit";
 
 // NOTE: The PDF parser (pdfjs-dist) is imported lazily inside the handler.
 // Eagerly importing it at module scope can throw at import time in some
@@ -65,6 +66,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized: Please log in." }, { status: 401 });
     }
     const userId = session.user.id;
+
+    // Step 1b: Rate limiting (5 uploads per minute per user)
+    const rateLimit = await checkRateLimit(request, "upload:resume", 5, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many uploads. Please wait a minute before uploading again." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": "5",
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": rateLimit.reset.toISOString(),
+          },
+        }
+      );
+    }
 
     // Step 2: Content-length header check (5MB max)
     const contentLength = parseInt(request.headers.get("content-length") || "0", 10);
@@ -413,7 +430,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Resume Upload API] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -114,17 +114,33 @@ PremiumLandingPage
 └── FinalScene             # Premium workspace footer
 ```
 
+## Premium Content Gating
+
+- `GET /api/questions/[id]` enforces server-side premium check
+- Free users get question text, short answer, difficulty, tags only
+- Listing endpoints (`GET /api/questions`, `GET /api/search`) exclude `answer.detailed` and videos by default
+
+## JSON-LD Structured Data
+
+- `WebSite`, `Organization`, `WebApplication` schema types injected via `JsonLd` component
+- `SearchAction` enables rich search results for search engines
+- Injected in root layout `<head>` via `src/components/JsonLd.tsx`
+
 ## Security Architecture
 
-| Layer | Implementation | Phase |
-|-------|---------------|-------|
-| Auth | NextAuth.js JWT, HttpOnly/Secure/SameSite cookies | 3 |
-| RBAC | `requireRole()` middleware on admin routes + mutating APIs | 3 |
-| Input validation | Zod schemas on every API route | 2 |
-| XSS prevention | `sanitize-html` allowlist before storage | 8 |
-| Embed safety | URL normalization to strict templates; reject unknown patterns | 2 |
-| Resume validation | Magic bytes + MIME + extension + size + page count | 2 |
-| Duplicate detection | SHA-256 content hash dedup | 2 |
-| Rate limiting | IP-based on auth + public write endpoints | 3 |
-| CSP | `frame-src` restricted to embed provider allowlist | 8 |
-| CSRF | SameSite cookies + explicit tokens on admin forms | 8 |
+| Layer | Implementation |
+|-------|---------------|
+| Auth | NextAuth.js JWT, HttpOnly/Secure/SameSite cookies |
+| Premium gating | Server-side `isPremium` check on question detail endpoint |
+| RBAC | `requireRole()` middleware on admin routes + mutating APIs |
+| Input validation | Zod schemas on every API route |
+| NoSQL injection | Allowlist validation on query parameters |
+| XSS prevention | `sanitize-html` allowlist before storage |
+| Error handling | Generic `"Internal Server Error"` to clients; real errors logged server-side |
+| Embed safety | URL normalization to strict templates; reject unknown patterns |
+| Resume validation | 16-step pipeline: magic bytes + MIME + encryption + macro + prompt injection + page count + heuristics + AI |
+| Duplicate detection | SHA-256 content hash dedup |
+| Rate limiting | DB-backed sliding window: login (10/min), register (10/min), suggestions (5/min), upload (5/min), search (30/min), AI (10/min) |
+| CSP | `frame-src` restricted to embed provider allowlist |
+| HSTS | `max-age=63072000; includeSubDomains; preload` on all responses |
+| CSRF | SameSite cookies + explicit tokens on admin forms |

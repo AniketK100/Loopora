@@ -15,13 +15,17 @@ interviewloop/
 ├── tsconfig.json             # TypeScript configuration
 │
 ├── docs/                     # Documentation
+│   ├── AI.md                 # AI pipeline documentation
 │   ├── ANIMATION_SYSTEM.md   # Animation documentation
 │   ├── API.md                # API route reference
 │   ├── ARCHITECTURE.md       # System architecture
 │   ├── DEPENDENCIES.md       # Dependency guide
+│   ├── DEPLOYMENT.md         # Production deployment guide
 │   ├── GIT_WORKFLOW.md       # Git procedures
 │   ├── LANDING_PAGE.md       # Landing page guide
+│   ├── PERFORMANCE.md        # Performance optimizations
 │   ├── PROJECT_STRUCTURE.md  # This file
+│   ├── ROADMAP.md            # Future plans
 │   ├── ROLLBACK.md           # Recovery procedures
 │   └── SECURITY.md           # Security documentation
 │
@@ -119,6 +123,7 @@ interviewloop/
 │   │   │   ├── UnderMaintenance.tsx
 │   │   │   └── index.ts
 │   │   ├── ImpersonationBanner.tsx
+│   │   ├── JsonLd.tsx            # JSON-LD structured data
 │   │   ├── LenisProvider.tsx
 │   │   └── Providers.tsx
 │   │
@@ -148,7 +153,8 @@ interviewloop/
 │   │   ├── embed/            # Video embed normalization
 │   │   │   └── normalize.ts
 │   │   ├── utils/            # General utilities
-│   │   │   ├── resumeParser.ts  # PDF/DOCX text extraction
+│   │   │   ├── pdfPolyfills.ts  # DOMMatrix polyfills for pdfjs-dist
+│   │   │   ├── resumeParser.ts  # PDF text extraction
 │   │   │   └── sanitize.ts      # HTML sanitization
 │   │   ├── validators/       # Zod schemas
 │   │   │   ├── fileSniffer.ts   # Magic byte validation

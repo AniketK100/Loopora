@@ -71,7 +71,6 @@ export async function GET(_request: NextRequest) {
     });
   } catch (error) {
     console.error("[Resume List API] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

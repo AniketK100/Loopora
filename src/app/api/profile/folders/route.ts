@@ -62,9 +62,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, selectedFolders: user.selectedFolders });
   } catch (error) {
     console.error("[Profile Folders POST API] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: errorMessage },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

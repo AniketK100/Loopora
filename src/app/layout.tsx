@@ -76,6 +76,7 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "@/components/Providers";
+import { JsonLd } from "@/components/JsonLd";
 
 export default function RootLayout({
   children,
@@ -87,6 +88,9 @@ export default function RootLayout({
       lang="en"
       className={`${kalam.variable} ${patrickHand.variable} h-full`}
     >
+      <head>
+        <JsonLd />
+      </head>
       <body className="min-h-full flex flex-col antialiased">
         <Providers>{children}</Providers>
       </body>

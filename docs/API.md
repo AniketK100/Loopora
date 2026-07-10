@@ -89,8 +89,13 @@ Returns published questions with optional filters.
 ### GET /api/questions/[id]
 
 Returns a single question with full details.
+Premium content (`isPremium: true`) is gated server-side.
 
 - **Auth:** None (public)
+- **Premium gating:**
+  - Free users receive: `_id`, `category`, `slug`, `question`, `difficulty`, `tags`, `isPremium`, `viewCount`, `answer.short`
+  - Premium users receive full question including `answer.detailed`, `answer.example`, and `videos`
+  - Gating is enforced server-side, not frontend-hidden
 
 ### POST /api/questions
 
@@ -351,12 +356,22 @@ For validation errors, additional detail may be included:
 { "error": "Validation failed.", "issues": [...] }
 ```
 
+Unexpected server errors return a generic message to prevent information leakage:
+
+```json
+{ "error": "Internal Server Error" }
+```
+
+Real error details (stack traces, Mongoose errors, internal paths) are logged server-side only.
+
 ## Security Notes
 
 - All mutating admin routes require `admin` or `editor` role
-- Rate limiting applied to auth and public write endpoints
+- Premium content gated server-side on `GET /api/questions/[id]`
+- Rate limiting applied to: login (10/min), register (10/min), suggestions (5/min), resume upload (5/min), search (30/min), AI personalization (10/min)
 - Input sanitization via `sanitize-html` on rich-text content
 - Audit logging on all create/update/delete operations
-- CSP headers set via middleware on all routes
-- Resume upload validated by magic bytes (not just extension/MIME)
+- CSP + HSTS headers set via middleware on all routes
+- Resume upload validated by 16-step pipeline: magic bytes, MIME, encryption detection, macro scan, prompt injection, page count, heuristics + AI classification
 - Personalized answers cached to reduce AI API costs
+- NoSQL injection prevented via allowlist validation on query parameters

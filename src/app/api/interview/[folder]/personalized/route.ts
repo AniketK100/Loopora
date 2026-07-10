@@ -22,6 +22,7 @@ import { Resume } from "@/lib/db/models/Resume";
 import { PersonalizedAnswer } from "@/lib/db/models/PersonalizedAnswer";
 import { AuditLog } from "@/lib/db/models/AuditLog";
 import { getAIService } from "@/lib/ai/provider";
+import { checkRateLimit } from "@/lib/auth/rateLimit";
 
 const AI_MODEL_VERSION = "v1";
 
@@ -36,6 +37,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized: Please log in." }, { status: 401 });
     }
     const userId = session.user.id;
+
+    const rateLimit = await checkRateLimit(request, "personalized:answers", 10, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment before generating personalized answers." },
+        { status: 429 }
+      );
+    }
 
     const { folder } = await params;
     const { searchParams } = new URL(request.url);
@@ -193,9 +202,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     console.error("[Personalized Answers GET API] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: errorMessage },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

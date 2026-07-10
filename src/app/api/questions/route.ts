@@ -69,12 +69,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 3. Filter by Difficulty
-    if (difficulty) {
+    // 3. Filter by Difficulty (strict enum validation to prevent NoSQL injection)
+    if (difficulty && ["easy", "medium", "hard"].includes(difficulty)) {
       query.difficulty = difficulty;
     }
 
-    // 4. Filter by Video Presence
+    // 4. Filter by Video Presence (strict boolean check)
     if (hasVideo === "true") {
       query.videos = { $exists: true, $not: { $size: 0 } };
     } else if (hasVideo === "false") {
@@ -136,9 +136,9 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[Questions List GET] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }
@@ -239,9 +239,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[Questions POST] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }

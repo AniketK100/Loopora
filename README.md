@@ -10,6 +10,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/atlas)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-38bdf8?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![AI](https://img.shields.io/badge/Gemini-2.5_Flash-8E75B2?style=for-the-badge&logo=googlegemini)](https://deepmind.google/gemini/)
+[![Auth](https://img.shields.io/badge/NextAuth-v5-FF6F00?style=for-the-badge&logo=auth0)](https://next-auth.js.org/)
 [![License](https://img.shields.io/badge/License-Private-red?style=for-the-badge)](#)
 
 ---
@@ -220,7 +222,101 @@ See [docs/](docs/) for comprehensive documentation:
 
 ---
 
-## 🔒 Environment Variables
+---
+
+## 🛡️ Security Architecture
+
+Loopora implements **defense-in-depth** across every layer:
+
+| Layer | Controls |
+|---|---|
+| **Authentication** | JWT with 30-day expiry, rate-limited login (10/min/IP), CSRF protection, HTTP-only cookies |
+| **Authorization** | Role-based access (user/editor/admin) enforced server-side on every mutating API route |
+| **Premium Gating** | Premium content (`isPremium`) enforced server-side — free users never receive full answers |
+| **Input Validation** | Zod schemas on every API route — type coercion, regex allowlisting, length limits |
+| **HTML Sanitization** | All rich-text answers sanitized via `sanitize-html` before storage |
+| **NoSQL Injection** | All query params explicitly validated — MongoDB operators cannot be injected |
+| **Rate Limiting** | DB-backed sliding window: register (10/min), login (10/min), uploads (5/min), search (30/min), AI (10/min) |
+| **Resume Upload** | 16-step pipeline: magic bytes → MIME verification → encryption detect → macro scan → prompt injection scan → page limit → content hash → heuristics + AI classification |
+| **Video Embed** | Strict URL allowlisting — only YouTube, Vimeo, Loom, Google Drive, Instagram MP4 embed URLs are accepted |
+| **Security Headers** | CSP, HSTS (2 years), X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy |
+| **Error Handling** | All server errors return generic `"Internal Server Error"` — stack traces logged server-side only |
+| **Audit Logging** | All mutating actions logged with actor, action, entity, and before/after diff |
+| **DPDP Compliance** | Account deletion cascades: anonymizes audit logs, deletes sessions, erases user record |
+
+### Security Headers (CSP)
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: res.cloudinary.com img.youtube.com i.vimeocdn.com; font-src 'self' data:; frame-src 'self' https://www.youtube.com/ https://www.youtube-nocookie.com/ https://player.vimeo.com/ https://www.loom.com/ https://drive.google.com/ https://www.instagram.com/; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; block-all-mixed-content; upgrade-insecure-requests
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+```
+
+---
+
+## 🧠 Premium Features & AI Pipeline
+
+| Feature | Free | Premium |
+|---|---|---|
+| Resume Storage | 1 resume | Up to 3 resumes |
+| Personalized Answers | Top 10 questions | All questions |
+| AI Resume Analysis | ✓ | ✓ |
+| Resume Quality Score | ✓ | ✓ |
+
+The AI pipeline uses **Google Gemini 2.5 Flash** with structured JSON output:
+1. **Heuristic Classification** — regex-based resume signal detection (email, phone, skills, etc.)
+2. **AI Classification** — Gemini classifies document as resume/non-resume (confidence ≥ 0.75)
+3. **Quality Analysis** — Gemini scores 0-100, identifies missing sections, gives suggestions
+4. **Personalized Answers** — Gemini generates tailored answers using resume context
+
+---
+
+## 🚢 Production Deployment
+
+### Vercel (Recommended)
+
+```bash
+# 1. Set environment variables in Vercel dashboard
+# Required: MONGODB_URI, NEXTAUTH_SECRET, NEXTAUTH_URL, GEMINI_API_KEY
+
+# 2. Build and deploy
+npm run build
+npx vercel --prod
+```
+
+### MongoDB Atlas
+
+- **Cluster**: M0 free tier (suitable for production-scale read-heavy workloads)
+- **Indexes**: Compound + text indexes on questions; unique indexes on user email, resume hash
+- **TTL Indexes**: Rate limits (auto-expire), sessions (30-day), personalized answers (90-day)
+
+### PostHog Analytics
+
+- Client-side via `posthog-js` (ingress proxied through Next.js rewrites)
+- Server-side via `posthog-node` for backend events
+- Session recording (masked), autocapture (masked), feature flags
+
+---
+
+## 📈 Performance Optimizations
+
+| Optimization | Implementation |
+|---|---|
+| Bundle Splitting | Admin and public routes are separate route groups — admin code never ships to visitors |
+| Dynamic Imports | PDF parser (`pdfjs-dist`) imported lazily in upload route |
+| Image Optimization | Next.js Image component with Cloudinary + YouTube/Vimeo thumbnails |
+| Font Loading | Self-hosted via `next/font` — no render-blocking external requests |
+| API Light Fields | List endpoints exclude `answer.detailed` and `videos` arrays |
+| DB Indexes | Text indexes, compound unique indexes, TTL indexes |
+| Caching | Resume analysis cached by SHA-256 content hash; personalized answers cached per (user, question, hash, model) |
+| ISR | Sitemap regenerated hourly; static pages served from edge |
+
+---
+
+## 🔑 Environment Variables
 
 Copy `.env.example` to `.env.local` for development. Required variables:
 

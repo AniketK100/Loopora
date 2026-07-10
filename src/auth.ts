@@ -78,10 +78,8 @@ const providers: Provider[] = [
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials, request) {
-      console.log("[AUTH] authorize called. request type:", typeof request, "request?.url:", request?.url);
       const parsed = loginSchema.safeParse(credentials);
       if (!parsed.success) {
-        console.log("[AUTH] Schema validation failed:", parsed.error.issues);
         return null;
       }
 
@@ -97,7 +95,6 @@ const providers: Provider[] = [
         });
         const loginLimit = Number(process.env.RATE_LIMIT_AUTH_MAX ?? 10);
         const rl = await checkRateLimit(rateReq, "auth:login", loginLimit, 60 * 1000);
-        console.log("[AUTH] Rate limit result:", JSON.stringify(rl));
         if (!rl.allowed) {
           throw new CredentialsSignin("Too many login attempts. Please try again later.");
         }
