@@ -182,17 +182,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Phase 3: Assemble final result
-    const result = cacheChecks.map(({ question: q, cached }) => ({
-      questionId: q._id,
-      slug: q.slug,
-      question: q.question,
-      sampleAnswer: q.answer.detailed,
-      personalizedAnswer:
-        cached?.personalizedText ||
-        generationResults.get(q._id.toString()) ||
-        q.answer.detailed, // fallback to sample if generation failed
-    }));
+    // Phase 3: Assemble final result — NO fallback to generic answer
+    const result = cacheChecks.map(({ question: q, cached }) => {
+      const personalizedText =
+        cached?.personalizedText || generationResults.get(q._id.toString()) || null;
+
+      return {
+        questionId: q._id,
+        slug: q.slug,
+        question: q.question,
+        sampleAnswer: q.answer.detailed,
+        personalizedAnswer: personalizedText,
+        updatedAt: cached?.updatedAt?.toISOString() || null,
+        isGenerated: !cached,
+        resumeContentHash: cached?.resumeContentHash || null,
+      };
+    });
 
     return NextResponse.json({
       success: true,

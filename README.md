@@ -82,7 +82,10 @@ Loopora is a **production-grade interview preparation SaaS** that helps candidat
 | **Resume Analysis** | Google Gemini extracts target role, skills, and experience from uploaded resumes |
 | **Resume Quality Score** | AI-powered 0-100 quality assessment with missing section detection and suggestions |
 | **Personalized Answers** | Gemini generates tailored interview answers using your resume context |
+| **Instant Answer Display** | Personalized answers appear directly in question card accordion — no extra page visit needed |
+| **Collapsible Sections** | Short Summary, Detailed Explanation, and Personalized Answer as independent collapsible sections with icons, green badges, resume metadata, and cache status |
 | **Folder Personalization** | Select up to 2 interview folders and get AI-personalized answers for every question |
+| **Resume Reactivity** | Personalized answers automatically regenerate when resume changes or is deleted |
 
 ### Admin & Management
 

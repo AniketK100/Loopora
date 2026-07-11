@@ -1,97 +1,52 @@
-/**
- * usePersonalizedAnswers Hook
- *
- * Fetches and caches personalized answers for a specific folder/category.
- * Handles loading states, error handling, and cache management.
- *
- * @module hooks/usePersonalizedAnswers
- */
-
 "use client";
 
-import { useState, useCallback } from "react";
-import { trackEvent } from "@/lib/analytics";
-
-interface PersonalizedQuestion {
-  questionId: string;
-  slug: string;
-  question: string;
-  sampleAnswer: string;
-  personalizedAnswer: string;
-}
-
-interface PersonalizedAnswersResponse {
-  success: boolean;
-  category: string;
-  isPremium: boolean;
-  questions: PersonalizedQuestion[];
-  error?: string;
-}
+import { useEffect, useRef } from "react";
+import { usePersonalizedAnswersContext } from "@/contexts/PersonalizedAnswersContext";
 
 interface UsePersonalizedAnswersReturn {
   personalizedAnswers: Record<string, string>;
-  isLoading: boolean;
+  isGenerating: boolean;
   error: string | null;
   generateAnswers: (_folderSlug: string, _resumeId: string) => Promise<void>;
-  clearError: () => void;
+  loadAnswers: (_folderSlug: string, _resumeId: string) => Promise<boolean>;
+  clearForFolder: (_folderSlug: string) => void;
+  clearAll: () => void;
+  activeResumeId: string | null;
+  activeResumeName: string | null;
+  setActiveResume: (_resumeId: string, _resumeName: string | null) => void;
 }
 
-export function usePersonalizedAnswers(): UsePersonalizedAnswersReturn {
-  const [personalizedAnswers, setPersonalizedAnswers] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function usePersonalizedAnswers(folderSlug?: string): UsePersonalizedAnswersReturn {
+  const ctx = usePersonalizedAnswersContext();
+  const loadedRef = useRef<Record<string, boolean>>({});
 
-  const generateAnswers = useCallback(async (folderSlug: string, resumeId: string) => {
-    setIsLoading(true);
-    setError(null);
+  const folderAnswers = folderSlug ? ctx.answers[folderSlug] || {} : {};
+  const personalizedAnswers: Record<string, string> = {};
+  for (const [slug, meta] of Object.entries(folderAnswers)) {
+    personalizedAnswers[slug] = meta.answer;
+  }
 
-    try {
-      const res = await fetch(
-        `/api/interview/${folderSlug}/personalized?resumeId=${resumeId}`
-      );
-
-      const json: PersonalizedAnswersResponse = await res.json();
-
-      if (!res.ok || !json.success) {
-        const errorMsg = json.error || "Failed to generate personalized answers.";
-        setError(errorMsg);
-        return;
+  useEffect(() => {
+    if (typeof window !== "undefined" && folderSlug && ctx.activeResumeId && !loadedRef.current[folderSlug]) {
+      const hasAnswers = ctx.answers[folderSlug] && Object.keys(ctx.answers[folderSlug]).length > 0;
+      if (!hasAnswers && !ctx.isGenerating[folderSlug]) {
+        loadedRef.current[folderSlug] = true;
+        ctx.loadForFolder(folderSlug, ctx.activeResumeId);
       }
-
-      // Build a map of questionId -> personalizedAnswer
-      const answersMap: Record<string, string> = {};
-      for (const q of json.questions) {
-        if (q.personalizedAnswer) {
-          answersMap[q.questionId] = q.personalizedAnswer;
-        }
-      }
-
-      setPersonalizedAnswers((prev) => ({
-        ...prev,
-        ...answersMap,
-      }));
-
-      trackEvent("generate_personalized_answers", {
-        folderSlug,
-        questionCount: json.questions.length,
-      });
-    } catch (err) {
-      console.error("[usePersonalizedAnswers] Error:", err);
-      setError("Network error. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ctx is stable; answers/isGenerating checked via ref
+  }, [folderSlug, ctx.activeResumeId]);
 
   return {
     personalizedAnswers,
-    isLoading,
-    error,
-    generateAnswers,
-    clearError,
+    isGenerating: folderSlug ? !!ctx.isGenerating[folderSlug] : false,
+    error: ctx.error,
+    generateAnswers: ctx.generateForFolder,
+    loadAnswers: ctx.loadForFolder,
+    clearForFolder: ctx.clearForFolder,
+    clearAll: ctx.clearAll,
+    activeResumeId: ctx.activeResumeId,
+    activeResumeName: ctx.activeResumeName,
+    setActiveResume: ctx.setActiveResume,
   };
 }

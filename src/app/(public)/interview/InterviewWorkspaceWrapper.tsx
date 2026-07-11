@@ -10,7 +10,7 @@
 
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Card, Badge } from "@/components/ui";
 import { ResumeUploadPanel } from "./ResumeUploadPanel";
@@ -18,6 +18,7 @@ import { FolderSelectionDialog } from "./FolderSelectionDialog";
 import { PremiumUpgradeModal } from "@/components/PremiumUpgradeModal";
 import { ResumeManager } from "@/components/ResumeManager";
 import { useResumeUpload } from "@/hooks/useResumeUpload";
+import { usePersonalizedAnswers } from "@/hooks/usePersonalizedAnswers";
 
 interface Category {
   _id: string;
@@ -49,6 +50,7 @@ export function InterviewWorkspaceWrapper({
 
   const {
     resumes,
+    latestResume,
     maxResumes,
     isPremium,
     isUploading,
@@ -58,6 +60,18 @@ export function InterviewWorkspaceWrapper({
     renameResume,
     refreshResumes: _refreshResumes,
   } = useResumeUpload();
+
+  const { setActiveResume: setContextResume, clearAll: clearContextAnswers } =
+    usePersonalizedAnswers();
+
+  // Sync active resume to context whenever it changes
+  useEffect(() => {
+    if (latestResume) {
+      setContextResume(latestResume._id, latestResume.displayName || latestResume.originalFilename);
+    } else {
+      clearContextAnswers();
+    }
+  }, [latestResume, setContextResume, clearContextAnswers]);
 
   const handleResumeUploaded = useCallback((resumeId: string) => {
     setUploadedResumeId(resumeId);

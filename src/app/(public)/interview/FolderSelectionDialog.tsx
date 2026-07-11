@@ -39,10 +39,11 @@ export function FolderSelectionDialog({
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { generateAnswers, isLoading: isGenerating } = usePersonalizedAnswers();
+  const { generateAnswers } = usePersonalizedAnswers();
 
   // Fetch categories when dialog opens
   useEffect(() => {
@@ -89,6 +90,7 @@ export function FolderSelectionDialog({
     }
 
     setIsSaving(true);
+    setIsGenerating(true);
     setError(null);
 
     try {
@@ -130,6 +132,7 @@ export function FolderSelectionDialog({
       setError("Network error. Please try again.");
     } finally {
       setIsSaving(false);
+      setIsGenerating(false);
     }
   }, [selectedFolders, categories, resumeId, generateAnswers, onFoldersSelected, onClose]);
 

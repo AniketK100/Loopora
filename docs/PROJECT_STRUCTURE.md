@@ -108,6 +108,9 @@ interviewloop/
 │   ├── auth.ts               # NextAuth Node.js init
 │   ├── middleware.ts          # Edge middleware
 │   │
+│   ├── contexts/             # React context providers
+│   │   └── PersonalizedAnswersContext.tsx  # Shared personalized answer state
+│   │
 │   ├── components/           # Shared components
 │   │   ├── ui/               # Primitive UI components
 │   │   │   ├── Accordion.tsx

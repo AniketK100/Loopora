@@ -94,12 +94,19 @@ src/
 6. Cache hit/miss via content hash lookup in `ResumeAnalysis` collection
 
 ### Personalized Answers Pipeline
-1. User selects up to 2 folders for personalization
-2. `GET /api/interview/[folder]/personalized?resumeId=...`
-3. Iterates questions in folder, checks cache (`PersonalizedAnswer`)
-4. Cache miss: calls Gemini to generate personalized answer from resume
-5. Falls back to sample answer on AI failure
-6. Free users limited to top 10 questions per folder
+1. User uploads resume → 16-step validation pipeline → folder selection dialog opens
+2. User selects up to 2 folders → `GET /api/interview/[folder]/personalized?resumeId=...` per folder
+3. For each folder:
+   - Fetches questions sorted by `frequencyRank`, limited to top 10 for free users
+   - Checks `PersonalizedAnswer` cache (compound key: `user + question + resumeContentHash + modelVersion`)
+   - Cache miss: calls Gemini `generatePersonalizedAnswer()` in batches of 4
+   - Result cached in `PersonalizedAnswer` collection with 90-day TTL
+   - Results returned with `updatedAt` timestamp for cache status display
+   - **No fallback to generic answer** — returns `null` on failure to prevent content duplication
+4. Answers stored in `PersonalizedAnswersContext` (React context) for shared access across components
+5. **Instant display**: Answers appear directly in accordion `CollapsibleSection` components within question cards — no page reload needed
+6. **Auto-load on mount**: `CategoryQuestionsContainer` lazy-loads cached answers via context when user navigates to a folder
+7. **Resume reactivity**: Context clears and regenerates when active resume changes or is deleted
 
 ## Landing Page Component Tree
 

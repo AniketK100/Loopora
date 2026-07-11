@@ -17,6 +17,7 @@ import { isMaintenanceModeActive } from "@/lib/flags";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { connectDB } from "@/lib/db/connection";
 import { User } from "@/lib/db/models/User";
+import { PersonalizedAnswersProvider } from "@/contexts/PersonalizedAnswersContext";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -130,7 +131,11 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          <PersonalizedAnswersProvider>
+            {children}
+          </PersonalizedAnswersProvider>
+        </main>
 
         <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
           <div className="max-w-7xl mx-auto px-4 space-y-6">

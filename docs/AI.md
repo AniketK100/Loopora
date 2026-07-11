@@ -89,21 +89,42 @@ User uploads resume
   → Cache HIT: return cached summary
   → Cache MISS: call Gemini analyzeResume()
   → Store Resume + ResumeAnalysis documents
+  → Open folder selection dialog
 
-User views question detail
-  → Check latestResume on profile
-  → Call GET /api/interview/[folder]/personalized?resumeId=...
-  → For each question in folder:
-    → Check PersonalizedAnswer cache (user + question + contentHash)
-    → Cache HIT: return cached personalized answer
-    → Cache MISS: call Gemini generatePersonalizedAnswer()
+User selects 2 folders
+  → For each folder, call GET /api/interview/[folder]/personalized?resumeId=...
+  → For each question in folder (top 10 for free, all for premium):
+    → Check PersonalizedAnswer cache (user + question + contentHash + modelVersion)
+    → Cache HIT: return cached personalized answer with updatedAt timestamp
+    → Cache MISS: call Gemini generatePersonalizedAnswer() in batches of 4
     → Store PersonalizedAnswer document
-    → Fall back to sample answer on AI failure
+    → No fallback to generic answer — return null on failure
+  → Results stored in PersonalizedAnswersContext (React Context)
+  → Answers appear immediately in question card accordion
+
+User browses questions in folder
+  → CategoryQuestionsContainer reads from PersonalizedAnswersContext
+  → Each question shows personalized answer in collapsible section with:
+    - Green badge "Based on your uploaded resume"
+    - Resume filename
+    - Generation timestamp
+    - ✓ Cached status
+  → If no resume: shows upload prompt
+  → If generating: shows skeleton animation
+  → If resume changes: context clears and auto-regenerates
+  → If resume deleted: context clears, shows upload prompt
+
+User opens dedicated question page
+  → Fetches personalized answer independently via same API
+  → Shows answer with resume metadata badge
+  → Premium upsell if personalized answer is null
 ```
 
 ### Error Handling
 
-- AI API failures do NOT break the page — answers fall back to the canonical sample answer
+- AI API failures do NOT break the page — null is returned for the personalized answer
+- The UI shows the generic "Detailed Model Explanation" instead
+- No content duplication: generic and personalized answers are mutually exclusive sections
 - All AI errors are logged server-side with `console.error`
 - Audit logging tracks AI spend via `ResumeAnalysis` entity type
 - Empty responses from Gemini throw descriptive errors

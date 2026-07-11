@@ -1,19 +1,3 @@
-/**
- * CategoryQuestionsContainer Client Component
- *
- * Manages search filtering and difficulty rating tabs for a folder's questions.
- * Renders a responsive split layout:
- * - Left Pane (Desktop): Sticky VideoPlayerPanel
- * - Right Pane: Interactive Search + Accordion Questions List
- *
- * Responsive breakpoints:
- * - Desktop (lg+): 50/50 split, video sticky
- * - Tablet (md): 40/60 split, video sticky
- * - Mobile: Stacked (video above questions)
- *
- * @module app/(public)/interview/[categorySlug]/CategoryQuestionsContainer
- */
-
 "use client";
 
 import React, { useState } from "react";
@@ -76,9 +60,13 @@ export function CategoryQuestionsContainer({
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [activeVideoTab, setActiveVideoTab] = useState<"video" | "explanation" | "notes">("video");
 
-  const { personalizedAnswers } = usePersonalizedAnswers();
+  const {
+    personalizedAnswers,
+    isGenerating,
+    activeResumeName,
+    activeResumeId,
+  } = usePersonalizedAnswers(category.slug);
 
-  // Filter list based on search term & difficulty tab selection
   const filteredQuestions = questions.filter((q) => {
     const matchesSearch =
       q.question.toLowerCase().includes(search.toLowerCase()) ||
@@ -97,23 +85,32 @@ export function CategoryQuestionsContainer({
     provider: v.provider,
   })) || [];
 
-  // Map to Accordion items format
   const accordionItems = filteredQuestions.map((q) => {
     const difficultyBadgeVariant = `difficulty-${q.difficulty}` as
       | "difficulty-easy"
       | "difficulty-medium"
       | "difficulty-hard";
 
-    // Get personalized answer for this question
-    const questionPersonalizedAnswer = personalizedAnswers[q.slug] || q.personalizedAnswer;
+    const questionPersonalizedAnswer =
+      personalizedAnswers[q.slug] || q.personalizedAnswer;
 
     return {
       id: q._id,
       trigger: (
         <div className="flex items-center justify-between w-full pr-4 text-left gap-4">
-          <span className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)]">
-            {q.question}
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-bold font-[family-name:var(--font-heading)] text-lg text-[var(--color-fg)] truncate">
+              {q.question}
+            </span>
+            {questionPersonalizedAnswer && (
+              <span
+                className="inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-800 border border-green-300 wobbly-sm shrink-0"
+                aria-label="Has personalized answer"
+              >
+                🎯 Personalized
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 shrink-0">
             {q.isPremium && (
               <span
@@ -121,14 +118,6 @@ export function CategoryQuestionsContainer({
                 aria-label="Premium content lock"
               >
                 🔒 Premium
-              </span>
-            )}
-            {questionPersonalizedAnswer && (
-              <span
-                className="inline-block px-1.5 py-0.5 text-xs bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/30 wobbly-sm font-bold"
-                aria-label="Has personalized answer"
-              >
-                🎯
               </span>
             )}
             <Badge variant={difficultyBadgeVariant}>{q.difficulty}</Badge>
@@ -146,6 +135,9 @@ export function CategoryQuestionsContainer({
           tags={q.tags}
           resources={q.resources}
           personalizedAnswer={questionPersonalizedAnswer}
+          resumeName={activeResumeName}
+          hasResume={!!activeResumeId}
+          isGenerating={isGenerating && !questionPersonalizedAnswer}
         />
       ),
     };
@@ -161,7 +153,7 @@ export function CategoryQuestionsContainer({
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-2 gap-6 lg:gap-8 items-start relative">
 
-      {/* LEFT PANE: VideoPlayerPanel (Sticky on Desktop, Stacked on Mobile) */}
+      {/* LEFT PANE: VideoPlayerPanel */}
       <div className={`w-full md:col-span-2 lg:col-span-1 lg:sticky lg:top-24 space-y-4 ${!activeQuestionId ? "hidden lg:block" : ""}`}>
         {activeQuestion ? (
           <VideoPlayerPanel
@@ -171,7 +163,6 @@ export function CategoryQuestionsContainer({
             onTabChange={setActiveVideoTab}
           />
         ) : (
-          /* Empty/Idle State */
           <div className="border-2 border-dashed border-[var(--color-border-light)] wobbly-sm p-8 bg-[var(--color-bg)] text-center flex flex-col items-center justify-center h-[340px] text-[var(--color-fg-muted)] space-y-4 shadow-sm">
             <div className="text-5xl animate-bounce">📓</div>
             <p className="font-[family-name:var(--font-heading)] font-bold text-lg text-[var(--color-fg)]">
@@ -188,7 +179,6 @@ export function CategoryQuestionsContainer({
       <div className="w-full md:col-span-3 lg:col-span-1 space-y-6">
         {/* Search and Difficulty Filter Controls Panel */}
         <div className="flex flex-col md:flex-row gap-4 items-end bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm p-4 shadow-sm">
-          {/* Live Search */}
           <div className="w-full md:flex-1">
             <Input
               label="Search this folder"
@@ -206,7 +196,6 @@ export function CategoryQuestionsContainer({
             />
           </div>
 
-          {/* Difficulty Tabs */}
           <div className="w-full md:w-auto flex flex-col gap-1.5">
             <label className="text-sm font-bold font-[family-name:var(--font-heading)] text-[var(--color-fg)]">
               Difficulty Filter
@@ -237,6 +226,33 @@ export function CategoryQuestionsContainer({
           </div>
         </div>
 
+        {/* Personalization status bar */}
+        {activeResumeId && !isGenerating && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 wobbly-sm text-xs text-green-800 font-[family-name:var(--font-body)]">
+            <span>🎯</span>
+            <span>
+              <strong>{Object.keys(personalizedAnswers).length}</strong> of <strong>{filteredQuestions.length}</strong> questions personalized
+              {activeResumeName && (
+                <span> based on <strong>{activeResumeName}</strong></span>
+              )}
+            </span>
+          </div>
+        )}
+
+        {isGenerating && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] wobbly-sm text-xs text-[var(--color-fg-muted)] animate-pulse font-[family-name:var(--font-body)]">
+            <span>⏳</span>
+            <span>Generating personalized answers...</span>
+          </div>
+        )}
+
+        {!activeResumeId && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 wobbly-sm text-xs text-amber-800 font-[family-name:var(--font-body)]">
+            <span>📄</span>
+            <span>Upload a resume to unlock AI personalized answers.</span>
+          </div>
+        )}
+
         {/* Accordion List Results */}
         <div className="pt-2">
           {accordionItems.length === 0 ? (
@@ -250,7 +266,7 @@ export function CategoryQuestionsContainer({
                 if (ids.length > 0) {
                   const expandedId = ids[ids.length - 1];
                   setActiveQuestionId(expandedId);
-                  setActiveVideoTab("video"); // Reset to video tab on expand
+                  setActiveVideoTab("video");
                   const matchingQ = questions.find((q) => q._id === expandedId);
                   if (matchingQ) {
                     trackEvent("expand_question", {

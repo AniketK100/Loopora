@@ -291,10 +291,34 @@ Returns personalized interview answers for questions in a folder, tailored to th
   2. Auto-adds folder to user's selected list
   3. Free users: top 10 questions by frequencyRank
   4. Premium users: all published questions
-  5. Checks `PersonalizedAnswer` cache (user + question + contentHash)
-  6. Cache miss: calls Gemini via `generatePersonalizedAnswer`
-  7. Falls back to sample answer on AI failure
-- **Caching:** Keyed by `(userId, questionId, resumeContentHash)` — unique compound index
+  5. Checks `PersonalizedAnswer` cache (user + question + contentHash + modelVersion)
+  6. Cache miss: calls Gemini via `generatePersonalizedAnswer` in batches of 4 for concurrency control
+  7. **Returns `null` for `personalizedAnswer` on generation failure** — no fallback to generic answer (prevents content duplication)
+  8. Each question response includes `updatedAt` (from cache) and `isGenerated` flag
+- **Caching:** Keyed by `(userId, questionId, resumeContentHash, modelVersion)` — compound unique index. TTL: 90 days.
+- **Rate Limit:** 10 requests/minute per user
+
+#### Response Format
+
+```json
+{
+  "success": true,
+  "category": "Behavioral",
+  "isPremium": false,
+  "questions": [
+    {
+      "questionId": "...",
+      "slug": "tell-me-about-yourself",
+      "question": "Tell me about yourself",
+      "sampleAnswer": "<p>Generic answer...</p>",
+      "personalizedAnswer": "<p>Tailored to your resume...</p>",
+      "updatedAt": "2026-07-11T12:00:00.000Z",
+      "isGenerated": true,
+      "resumeContentHash": "abc123..."
+    }
+  ]
+}
+```
 
 ---
 
