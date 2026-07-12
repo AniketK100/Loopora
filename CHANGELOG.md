@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.4.0] - 2026-07-12 — Final production polish (Interview Workspace refinements)
+
+### Changed (Interview Workspace)
+- **Workspace-style header** — replaced the plain-text folder label with a VS Code-like project header: folder icon, name, description, `{N} Questions` count, difficulty-distribution pills (🟢/🟡/🔴 counts) and a resume-status pill ("Resume" / "No resume"). Sticky under the site header.
+- **Search + difficulty filter moved into the workspace toolbar** (visible `lg`+); the right navigator column is now a pure, denser question list. On `<lg` the filter lives in the navigator drawer header.
+- **Video presenter tabs moved ABOVE the player** as browser-style tabs, each with a platform icon (YouTube ▶️, Vimeo 🎥, Loom 🎬, Drive 📁, MP4 🎞️, Instagram 📸) and the active tab highlighted; a 📝 Notes tab is appended. The old bottom selector was removed.
+- **Flush, no-wasted-margin player** — the embed now renders edge-to-edge in a bordered box (no card padding), so it uses the full column width. Still never cropped (resolved `aspect-ratio`).
+- **Column widths redistributed to 30% / 42% / 28%** (Video / Answer / Navigator) for better visual balance.
+- **Compact, animated question cards** — tighter padding, 13px title, hover lift + border emphasis, active item gets an accent left-border + tinted background; list items are `React.memo`-ized.
+- **3 columns from `lg` (≥1024px)** instead of only `xl`; tablet (md) shows 2 columns (Video+Answer) with the navigator drawer; mobile gets a single column plus a **sticky bottom navigation** (☰ Questions + Prev/Next).
+- **Reduced-motion support** — Framer Motion transitions are disabled when `prefers-reduced-motion` is set; list cross-fades respect it.
+- **Consistent focus rings + ARIA** — `role="tablist"/"tab"` on tab groups, `aria-current` on the active question, unified `focus-visible` ring on every interactive element.
+
+### Performance
+- `React.memo` on question list items; `useCallback` for navigation/filter handlers; `useMemo` for filtered list and difficulty distribution; single `usePersonalizedAnswers` read in the header (resume status) instead of a second fetch.
+
+### Accessibility
+- Keyboard question switching (↑/↓), focus-visible rings, `aria-pressed`/`aria-current`/`role="tab"`, `prefers-reduced-motion` honored.
+
 ## [2.3.0] - 2026-07-12 — Interview Folder Experience redesign (three-column workspace)
 
 ### Added

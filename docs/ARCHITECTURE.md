@@ -71,18 +71,20 @@ src/
 The Interview Folder experience (`/interview/[categorySlug]` and `/interview/[categorySlug]/[questionSlug]`) is rendered by a single shared client component, `src/app/(public)/interview/InterviewWorkspace.tsx`, backed by the server loader `workspace-data.ts`.
 
 ### Layout
-| Column | Width (xl) | Responsibility |
+| Column | Width (lg+) | Responsibility |
 |--------|-----------|----------------|
-| Video Workspace | ~30% | Multi-video player (presenter tabs), aspect-ratio-correct embed, Notes tab, Resources, Favorite/Practiced toggles |
-| Answer Workspace | ~45% | Tabs: Short Summary / Detailed / Personalized; internal scroll; collapsible suggest-edit console |
-| Question Navigator | ~25% | Search + difficulty filter + sticky scrollable list with status badges |
+| Video Workspace | 30% | Browser-style presenter tabs (platform icons) above a flush, aspect-ratio-correct player; Notes tab; Resources; Favorite/Practiced toggles |
+| Answer Workspace | 42% | Tabs: Short Summary / Detailed / Personalized; internal scroll; collapsible suggest-edit console |
+| Question Navigator | 28% | Dense, animated question list with status badges (search/filter live in the toolbar) |
 
 ### Architecture
 - **Single source of truth:** `getWorkspaceData(categorySlug, activeQuestionSlug?)` (server) fetches the category, the published question list (navigator), and the active question's full content (videos resolved via `getEmbedUrl` with `aspectRatio`) in one round-trip. Both routes feed the same `InterviewWorkspace`.
+- **Workspace header:** VS Code-like project header with folder icon, name, description, question count, difficulty-distribution pills and resume-status pill; search + difficulty filter sit in the toolbar (`lg`+).
 - **No layout shift:** the 3-column grid structure is constant across question switches; only inner column content re-animates (Framer Motion `AnimatePresence`), so pages never jump.
 - **State preservation:** search/difficulty filters are initialized from `useSearchParams` and carried in every navigator `<Link>` href, so they survive question navigation and back/forward without a remount glitch.
-- **Keyboard nav:** `ArrowUp`/`ArrowDown` move between questions in the filtered navigator list.
-- **Responsive:** 3 columns ≥1280px; 2 columns + navigator drawer (1024–1279px); single column with a sticky question selector below 1024px.
+- **Keyboard nav:** `ArrowUp`/`ArrowDown` move between questions in the filtered navigator list; mobile gets a sticky bottom nav (Prev/Next + open list).
+- **Responsive:** 3 columns ≥1024px (`lg`); 2 columns (Video+Answer) + navigator drawer at `md` (768–1023px); single column with sticky bottom navigation below `md`.
+- **Reduced motion:** Framer Motion transitions are disabled under `prefers-reduced-motion`; global `:focus-visible` ring provides consistent keyboard affordances.
 - **Premium gating:** `isPremium && !userHasPremium` locks the video, detailed answer, worked example and personalized answer.
 
 ### Component Tree

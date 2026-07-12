@@ -2,14 +2,15 @@
  * InterviewWorkspace — Three-Column Interview Experience
  *
  * Production-grade, desktop-first workspace for a single Interview Folder:
- *   • Left  (~30%) Video Workspace  — multi-video tabs, never cropped (CSS aspect-ratio), notes.
- *   • Center(~45%) Answer Workspace  — tabbed (Short Summary / Detailed / Personalized), internal scroll.
- *   • Right (~25%) Question Navigator— search + difficulty filter + sticky scrollable list, keyboard nav.
+ *   • Left  (30%) Video Workspace  — browser-style presenter tabs (platform icons) above a
+ *              flush, never-cropped player (CSS aspect-ratio) + Notes tab + Resources.
+ *   • Center(42%) Answer Workspace  — tabbed (Short Summary / Detailed / Personalized), internal scroll.
+ *   • Right (28%) Question Navigator— compact question list (search/filter live in the toolbar).
  *
- * Layout is structurally constant across question switches (only inner content
- * cross-fades), so there is zero layout shift. Videos are never cropped because
- * every player box uses the resolved `aspect-ratio`. Fully responsive: 3-col on
- * xl, 2-col (Video+Answer) with a navigator drawer on lg, single-column on smaller.
+ * Layout is structurally constant across question switches (only inner content cross-fades),
+ * so there is zero layout shift. Videos are never cropped because every player box uses the
+ * resolved `aspect-ratio`. Responsive: 3-col from lg (≥1024), 2-col (Video+Answer) with a
+ * navigator drawer on tablet, single column with a sticky bottom nav on mobile.
  *
  * @module app/(public)/interview/InterviewWorkspace
  */
@@ -25,7 +26,7 @@ import React, {
 } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Card,
   Button,
@@ -53,6 +54,12 @@ const DIFFICULTIES: { key: DifficultyFilter; label: string }[] = [
   { key: "hard", label: "🔴 Hard" },
 ];
 
+const DIFF_META: Record<string, { label: string; dot: string }> = {
+  easy: { label: "Easy", dot: "🟢" },
+  medium: { label: "Medium", dot: "🟡" },
+  hard: { label: "Hard", dot: "🔴" },
+};
+
 const ICON_EMOJI: Record<string, string> = {
   user: "👤",
   code: "💻",
@@ -63,9 +70,23 @@ const ICON_EMOJI: Record<string, string> = {
   bookopen: "📖",
 };
 
-function categoryIcon(category: WorkspaceCategory | null): string {
-  return ICON_EMOJI[(category?.icon || "").toLowerCase()] || "📁";
-}
+const PLATFORM_ICON: Record<string, string> = {
+  youtube: "▶️",
+  vimeo: "🎥",
+  loom: "🎬",
+  drive: "📁",
+  mp4: "🎞️",
+  instagram: "📸",
+};
+
+// Unified, accessible focus ring used on every interactive element.
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg)]";
+
+const categoryIcon = (category: WorkspaceCategory | null): string =>
+  ICON_EMOJI[(category?.icon || "").toLowerCase()] || "📁";
+
+const platformIcon = (provider: string): string => PLATFORM_ICON[provider] || "🗣️";
 
 interface InterviewWorkspaceProps {
   category: WorkspaceCategory;
@@ -82,11 +103,14 @@ export function InterviewWorkspace({
 }: InterviewWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const reduceMotion = useReducedMotion();
   const [search, setSearch] = useState(() => searchParams.get("q") || "");
   const [difficulty, setDifficulty] = useState<DifficultyFilter>(
     () => (searchParams.get("diff") as DifficultyFilter) || "all"
   );
   const [navOpen, setNavOpen] = useState(false);
+
+  const { activeResumeName, activeResumeId } = usePersonalizedAnswers(category.slug);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -100,6 +124,12 @@ export function InterviewWorkspace({
     });
   }, [questions, search, difficulty]);
 
+  const difficultyDist = useMemo(() => {
+    const dist = { easy: 0, medium: 0, hard: 0 };
+    for (const q of questions) dist[q.difficulty]++;
+    return dist;
+  }, [questions]);
+
   const buildHref = useCallback(
     (slug: string) => {
       const params = new URLSearchParams();
@@ -111,29 +141,44 @@ export function InterviewWorkspace({
     [search, difficulty, category.slug]
   );
 
+  const navigateTo = useCallback(
+    (slug: string) => {
+      router.push(buildHref(slug));
+      setNavOpen(false);
+    },
+    [router, buildHref]
+  );
+
   // Keyboard navigation: ArrowUp / ArrowDown switch questions in the filtered list.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const el = document.activeElement;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-      if (filtered.length === 0) return;
-      const curIdx = activeQuestion
-        ? filtered.findIndex((q) => q._id === activeQuestion._id)
-        : -1;
+      if (filtered.length === 0 || !activeQuestion) return;
+      const curIdx = filtered.findIndex((q) => q._id === activeQuestion._id);
+      if (curIdx < 0) return;
       e.preventDefault();
-      let nextIdx: number;
-      if (e.key === "ArrowDown") {
-        nextIdx = curIdx < 0 ? 0 : Math.min(curIdx + 1, filtered.length - 1);
-      } else {
-        nextIdx = curIdx <= 0 ? 0 : curIdx - 1;
-      }
+      const nextIdx =
+        e.key === "ArrowDown"
+          ? Math.min(curIdx + 1, filtered.length - 1)
+          : Math.max(curIdx - 1, 0);
       const next = filtered[nextIdx];
-      if (next) router.push(buildHref(next.slug));
+      if (next) navigateTo(next.slug);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [filtered, activeQuestion, router, buildHref]);
+  }, [filtered, activeQuestion, navigateTo]);
+
+  const goRelative = useCallback(
+    (delta: number) => {
+      if (!activeQuestion) return;
+      const idx = filtered.findIndex((q) => q._id === activeQuestion._id);
+      const target = filtered[idx + delta];
+      if (target) navigateTo(target.slug);
+    },
+    [activeQuestion, filtered, navigateTo]
+  );
 
   if (!activeQuestion) {
     return (
@@ -158,78 +203,85 @@ export function InterviewWorkspace({
 
   const isLocked = activeQuestion.isPremium && !userHasPremium;
 
-  const navigator = (
-    <QuestionNavigator
-      questions={filtered}
-      activeId={activeQuestion._id}
+  const filterBar = (
+    <FilterBar
       search={search}
       difficulty={difficulty}
       onSearchChange={(v) => {
         setSearch(v);
-        if (v.length >= 3) {
-          trackEvent("search_questions", { categorySlug: category.slug, query: v });
-        }
+        if (v.length >= 3) trackEvent("search_questions", { categorySlug: category.slug, query: v });
       }}
       onDifficultyChange={(d) => {
         setDifficulty(d);
         trackEvent("filter_difficulty", { categorySlug: category.slug, difficulty: d });
       }}
-      onSelect={(slug) => {
-        router.push(buildHref(slug));
-        setNavOpen(false);
-      }}
+    />
+  );
+
+  const questionList = (
+    <QuestionList
+      questions={filtered}
+      activeId={activeQuestion._id}
+      onSelect={navigateTo}
     />
   );
 
   return (
-    <div className="flex flex-col xl:h-[calc(100dvh-4rem)]">
-      {/* Compact toolbar header */}
+    <div className="flex flex-col lg:h-[calc(100dvh-4rem)]">
       <WorkspaceHeader
         category={category}
-        activeQuestion={activeQuestion}
+        difficultyDist={difficultyDist}
+        resumeName={activeResumeName}
+        hasResume={!!activeResumeId}
         onOpenNav={() => setNavOpen(true)}
-      />
+      >
+        <div className="hidden lg:block">{filterBar}</div>
+      </WorkspaceHeader>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-[30fr_45fr_25fr] gap-4 p-3 sm:p-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[30fr_42fr_28fr] gap-3 sm:gap-4 p-3 sm:p-4 pb-24 lg:pb-4">
         {/* LEFT — Video Workspace */}
-        <section className="min-h-0 xl:overflow-y-auto" aria-label="Video workspace">
+        <section className="min-h-0 lg:overflow-y-auto" aria-label="Video workspace">
           <VideoWorkspace key={activeQuestion._id} question={activeQuestion} isLocked={isLocked} />
         </section>
 
         {/* CENTER — Answer Workspace */}
-        <section className="min-h-0 xl:overflow-y-auto" aria-label="Answer workspace">
+        <section className="min-h-0 lg:overflow-y-auto" aria-label="Answer workspace">
           <AnswerWorkspace
             key={activeQuestion._id}
             question={activeQuestion}
             isLocked={isLocked}
             userHasPremium={userHasPremium}
             categorySlug={category.slug}
+            reduceMotion={!!reduceMotion}
           />
         </section>
 
-        {/* RIGHT — Question Navigator (desktop) */}
-        <aside className="hidden xl:flex min-h-0 xl:overflow-hidden flex-col" aria-label="Question navigator">
-          {navigator}
+        {/* RIGHT — Question Navigator (lg and up) */}
+        <aside
+          className="hidden lg:flex min-h-0 lg:overflow-hidden flex-col border-2 border-[var(--color-border-light)] bg-[var(--color-bg)]"
+          aria-label="Question navigator"
+        >
+          {questionList}
         </aside>
       </div>
 
-      {/* Navigator drawer (below xl) */}
+      {/* Navigator drawer (below lg) */}
       <AnimatePresence>
         {navOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setNavOpen(false)}
             />
             <motion.aside
-              className="fixed top-0 right-0 z-50 h-full w-[88%] max-w-sm bg-[var(--color-bg)] shadow-2xl flex flex-col xl:hidden border-l-2 border-[var(--color-border)]"
+              className="fixed top-0 right-0 z-50 h-full w-[88%] max-w-sm bg-[var(--color-bg)] shadow-2xl flex flex-col lg:hidden border-l-2 border-[var(--color-border)]"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
+              transition={reduceMotion ? { duration: 0 } : { type: "tween", duration: 0.25, ease: "easeOut" }}
               role="dialog"
               aria-label="Question navigator"
             >
@@ -240,62 +292,185 @@ export function InterviewWorkspace({
                 <button
                   type="button"
                   onClick={() => setNavOpen(false)}
-                  className="px-3 py-1 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm"
+                  className={`px-3 py-1 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm ${FOCUS_RING}`}
                   aria-label="Close navigator"
                 >
                   ✕
                 </button>
               </div>
-              <div className="flex-1 min-h-0">{navigator}</div>
+              <div className="p-3 border-b-2 border-[var(--color-border-light)]">{filterBar}</div>
+              <div className="flex-1 min-h-0">{questionList}</div>
             </motion.aside>
           </>
         )}
       </AnimatePresence>
+
+      {/* Mobile sticky bottom navigation */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t-2 border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur flex items-center justify-between gap-2 px-3 py-2"
+        aria-label="Question navigation"
+      >
+        <button
+          type="button"
+          onClick={() => setNavOpen(true)}
+          className={`px-3 py-2 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm ${FOCUS_RING}`}
+        >
+          ☰ <span className="hidden sm:inline">Questions</span>
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => goRelative(-1)}
+            disabled={filtered.findIndex((q) => q._id === activeQuestion._id) <= 0}
+            className={`px-3 py-2 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm disabled:opacity-40 ${FOCUS_RING}`}
+            aria-label="Previous question"
+          >
+            <span aria-hidden="true">↑</span>
+            <span className="hidden sm:inline"> Prev</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => goRelative(1)}
+            disabled={
+              filtered.findIndex((q) => q._id === activeQuestion._id) >= filtered.length - 1
+            }
+            className={`px-3 py-2 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm disabled:opacity-40 ${FOCUS_RING}`}
+            aria-label="Next question"
+          >
+            <span className="hidden sm:inline">Next </span>
+            <span aria-hidden="true">↓</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* Workspace Header (compact toolbar)                                          */
+/* Workspace Header (VS Code-style project header)                            */
 /* -------------------------------------------------------------------------- */
 
 function WorkspaceHeader({
   category,
-  activeQuestion,
+  difficultyDist,
+  resumeName,
+  hasResume,
   onOpenNav,
+  children,
 }: {
   category: WorkspaceCategory;
-  activeQuestion: WorkspaceActiveQuestion;
+  difficultyDist: { easy: number; medium: number; hard: number };
+  resumeName?: string | null;
+  hasResume: boolean;
   onOpenNav: () => void;
+  children?: React.ReactNode;
 }) {
   return (
-    <header className="shrink-0 border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] px-3 sm:px-4 py-2.5 flex items-center gap-3">
+    <header className="sticky top-16 z-20 shrink-0 border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] px-3 sm:px-4 py-2.5 flex items-center gap-3">
       <span className="text-2xl shrink-0" aria-hidden="true">
         {categoryIcon(category)}
       </span>
+
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 min-w-0">
           <h1 className="font-[family-name:var(--font-heading)] font-bold text-lg text-[var(--color-fg)] truncate">
             {category.name}
           </h1>
           <span className="text-xs text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] shrink-0">
-            {category.questionCount} items
+            {category.questionCount} Questions
           </span>
         </div>
-        {/* Current question context (always visible on small screens) */}
-        <p className="text-xs text-[var(--color-fg-muted)] truncate font-[family-name:var(--font-body)] xl:hidden">
-          {activeQuestion.question}
-        </p>
+        {category.description && (
+          <p className="text-xs text-[var(--color-fg-muted)] truncate font-[family-name:var(--font-body)] hidden sm:block">
+            {category.description}
+          </p>
+        )}
       </div>
+
+      {/* Metadata pills */}
+      <div className="hidden md:flex items-center gap-1.5 shrink-0 text-[11px] font-[family-name:var(--font-heading)] font-bold">
+        <span className="px-2 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
+          {DIFF_META.easy.dot} {difficultyDist.easy}
+        </span>
+        <span className="px-2 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
+          {DIFF_META.medium.dot} {difficultyDist.medium}
+        </span>
+        <span className="px-2 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
+          {DIFF_META.hard.dot} {difficultyDist.hard}
+        </span>
+        <span
+          className={[
+            "px-2 py-1 rounded-full border",
+            hasResume
+              ? "bg-green-50 border-[var(--color-success)] text-[var(--color-success)]"
+              : "bg-[var(--color-bg-alt)] border-[var(--color-border-light)] text-[var(--color-fg-muted)]",
+          ].join(" ")}
+          title={hasResume ? `Resume: ${resumeName}` : "No resume uploaded"}
+        >
+          📄 {hasResume ? "Resume" : "No resume"}
+        </span>
+      </div>
+
+      {children}
 
       <button
         type="button"
         onClick={onOpenNav}
-        className="xl:hidden shrink-0 px-3 py-1.5 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm bg-[var(--color-bg-alt)] hover:bg-[var(--color-bg-alt)]/60"
+        className={`lg:hidden shrink-0 px-3 py-1.5 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm bg-[var(--color-bg-alt)] hover:bg-[var(--color-bg-alt)]/60 ${FOCUS_RING}`}
       >
         ☰ Questions
       </button>
     </header>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Filter Bar (search + difficulty) — lives in toolbar (lg) and drawer        */
+/* -------------------------------------------------------------------------- */
+
+function FilterBar({
+  search,
+  difficulty,
+  onSearchChange,
+  onDifficultyChange,
+}: {
+  search: string;
+  difficulty: DifficultyFilter;
+  onSearchChange: (v: string) => void;
+  onDifficultyChange: (d: DifficultyFilter) => void;
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row gap-2 w-full">
+      <div className="flex-1">
+        <Input
+          label="Search this folder"
+          placeholder="e.g. recursion, arrays..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          aria-label="Search questions"
+          className={FOCUS_RING}
+        />
+      </div>
+      <div className="flex border-2 border-[var(--color-border)] bg-[var(--color-bg-alt)]/30 p-0.5 shrink-0">
+        {DIFFICULTIES.map((d) => (
+          <button
+            key={d.key}
+            type="button"
+            onClick={() => onDifficultyChange(d.key)}
+            aria-pressed={difficulty === d.key}
+            className={[
+              "px-2.5 py-1 text-xs font-bold font-[family-name:var(--font-heading)] transition-all",
+              difficulty === d.key
+                ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
+                : "text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]",
+              FOCUS_RING,
+            ].join(" ")}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -310,8 +485,8 @@ function VideoWorkspace({
   question: WorkspaceActiveQuestion;
   isLocked: boolean;
 }) {
-  const [videoTab, setVideoTab] = useState<"video" | "notes">("video");
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [showNotes, setShowNotes] = useState(false);
 
   const current = question.videos[selectedVideoIndex] || question.videos[0];
   const difficultyBadge = `difficulty-${question.difficulty}` as
@@ -324,16 +499,14 @@ function VideoWorkspace({
       {/* Question context + toggles */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant={difficultyBadge}>{question.difficulty}</Badge>
             {question.isPremium && (
               <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-[var(--color-warning)] border border-[var(--color-warning)]">
                 👑 Premium
               </span>
             )}
-            <span className="text-xs text-[var(--color-fg-muted)] font-mono">
-              #{question.frequencyRank}
-            </span>
+            <span className="text-xs text-[var(--color-fg-muted)] font-mono">#{question.frequencyRank}</span>
           </div>
           <h2 className="font-[family-name:var(--font-heading)] font-bold text-base sm:text-lg text-[var(--color-fg)] leading-snug">
             {question.question}
@@ -345,116 +518,134 @@ function VideoWorkspace({
         </div>
       </div>
 
-      {/* Player card */}
-      <Card decoration="none" className="overflow-hidden border-2 border-[var(--color-border)]">
-        {isLocked ? (
-          <div className="aspect-video flex flex-col items-center justify-center bg-[var(--color-bg-alt)]/30 p-6 text-center space-y-3">
-            <span className="text-4xl" role="img" aria-label="Locked">🔒</span>
-            <p className="font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg)]">
-              Video locked
-            </p>
-            <p className="text-sm text-[var(--color-fg-muted)] max-w-xs font-[family-name:var(--font-body)]">
-              Upgrade to Premium to watch creator walkthroughs for this question.
-            </p>
-            <Link href="/signup">
-              <Button variant="primary" className="text-sm">Upgrade &rarr;</Button>
-            </Link>
-          </div>
-        ) : question.videos.length === 0 ? (
-          <div className="aspect-video flex flex-col items-center justify-center bg-[var(--color-bg-alt)]/20 p-6 text-center space-y-2">
-            <div className="text-4xl">🎬</div>
-            <h3 className="font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg)]">
-              Video Coming Soon
-            </h3>
-            <p className="text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
-              A walkthrough for this question is being prepared.
-            </p>
-          </div>
-        ) : (
-          <div>
-            {/* Video / Notes tabs */}
-            <div className="flex border-b-2 border-[var(--color-border-light)] bg-[var(--color-bg-alt)]/20 font-[family-name:var(--font-heading)]">
-              <TabButton label="🎬 Video" isActive={videoTab === "video"} onClick={() => setVideoTab("video")} />
-              <TabButton label="📝 Notes" isActive={videoTab === "notes"} onClick={() => setVideoTab("notes")} />
-            </div>
-
-            {videoTab === "video" ? (
-              <div>
-                {/* Player — never cropped, uses resolved aspect-ratio */}
-                <div
-                  className="bg-black flex items-center justify-center"
-                  style={{ aspectRatio: current?.aspectRatio || "16 / 9" }}
+      {isLocked ? (
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-bg-alt)]/30 flex flex-col items-center justify-center p-8 text-center space-y-3 min-h-[280px]">
+          <span className="text-4xl" role="img" aria-label="Locked">🔒</span>
+          <p className="font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg)]">
+            Video locked
+          </p>
+          <p className="text-sm text-[var(--color-fg-muted)] max-w-xs font-[family-name:var(--font-body)]">
+            Upgrade to Premium to watch creator walkthroughs for this question.
+          </p>
+          <Link href="/signup">
+            <Button variant="primary" className="text-sm">Upgrade &rarr;</Button>
+          </Link>
+        </div>
+      ) : question.videos.length === 0 ? (
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-bg-alt)]/20 flex flex-col items-center justify-center p-8 text-center space-y-2 min-h-[280px]">
+          <div className="text-4xl">🎬</div>
+          <h3 className="font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg)]">
+            Video Coming Soon
+          </h3>
+          <p className="text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
+            A walkthrough for this question is being prepared.
+          </p>
+        </div>
+      ) : (
+        <div className="border-2 border-[var(--color-border)] overflow-hidden bg-[var(--color-bg)]">
+          {/* Browser-style presenter tabs ABOVE the player */}
+          <div
+            className="flex flex-wrap border-b-2 border-[var(--color-border-light)] bg-[var(--color-bg-alt)]/20 font-[family-name:var(--font-heading)]"
+            role="tablist"
+            aria-label="Video sources"
+          >
+            {question.videos.map((v, idx) => {
+              const active = !showNotes && selectedVideoIndex === idx;
+              return (
+                <button
+                  key={v.url + idx}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    setShowNotes(false);
+                    setSelectedVideoIndex(idx);
+                    trackEvent("switch_video_presenter", {
+                      questionSlug: question.slug,
+                      presenterLabel: v.label,
+                      url: v.url,
+                    });
+                  }}
+                  className={[
+                    "px-3 py-2 text-xs font-bold transition-all border-r-2 border-[var(--color-border-light)] last:border-r-0 flex items-center gap-1.5",
+                    active
+                      ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
+                      : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]/40",
+                    FOCUS_RING,
+                  ].join(" ")}
                 >
-                  {current?.resolvedType === "iframe" && (
-                    <iframe
-                      key={current.url}
-                      src={current.resolvedSrc}
-                      title={current.label}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  )}
-                  {current?.resolvedType === "video" && (
-                    <video src={current.resolvedSrc} controls className="w-full h-full object-contain" preload="metadata">
-                      Your browser does not support the video tag.
-                    </video>
-                  )}
-                  {current?.resolvedType === "unsupported" && (
-                    <div className="p-8 text-center text-white space-y-3 font-[family-name:var(--font-body)]">
-                      <p className="text-sm">Direct Video Link:</p>
-                      <a
-                        href={current.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block px-4 py-2 bg-white text-black font-bold hover:scale-105 transition-transform"
-                      >
-                        Open External Tutorial &rarr;
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                {/* Multi-video selector */}
-                {question.videos.length > 1 && (
-                  <div className="p-3 flex flex-wrap gap-2">
-                    {question.videos.map((v, idx) => (
-                      <button
-                        key={v.url + idx}
-                        type="button"
-                        onClick={() => {
-                          setSelectedVideoIndex(idx);
-                          trackEvent("switch_video_presenter", {
-                            questionSlug: question.slug,
-                            presenterLabel: v.label,
-                            url: v.url,
-                          });
-                        }}
-                        className={[
-                          "px-3 py-1.5 text-xs font-bold font-[family-name:var(--font-heading)] border-2 transition-all",
-                          idx === selectedVideoIndex
-                            ? "bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-accent)]"
-                            : "bg-[var(--color-bg)] text-[var(--color-fg)] border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]",
-                        ].join(" ")}
-                      >
-                        🗣️ {v.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-4">
-                <textarea
-                  placeholder="Write your study notes while watching the video..."
-                  className="w-full h-40 p-3 bg-[var(--color-bg)] border-2 border-[var(--color-border-light)] font-[family-name:var(--font-body)] text-sm text-[var(--color-fg)] placeholder-[var(--color-fg-muted)]/50 focus:outline-none focus:border-[var(--color-accent)] resize-none"
-                  aria-label="Study notes"
-                />
-              </div>
-            )}
+                  <span aria-hidden="true">{platformIcon(v.provider)}</span>
+                  <span className="truncate max-w-[10rem]">{v.label}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={showNotes}
+              onClick={() => setShowNotes(true)}
+              className={[
+                "px-3 py-2 text-xs font-bold transition-all border-l-2 border-[var(--color-border-light)] ml-auto flex items-center gap-1.5",
+                showNotes
+                  ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
+                  : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]/40",
+                FOCUS_RING,
+              ].join(" ")}
+            >
+              📝 Notes
+            </button>
           </div>
-        )}
-      </Card>
+
+          {showNotes ? (
+            <div className="p-4">
+              <textarea
+                placeholder="Write your study notes while watching the video..."
+                className={`w-full h-48 p-3 bg-[var(--color-bg)] border-2 border-[var(--color-border-light)] font-[family-name:var(--font-body)] text-sm text-[var(--color-fg)] placeholder-[var(--color-fg-muted)]/50 focus:outline-none focus:border-[var(--color-accent)] resize-none ${FOCUS_RING}`}
+                aria-label="Study notes"
+              />
+            </div>
+          ) : (
+            <div
+              className="bg-black flex items-center justify-center w-full"
+              style={{ aspectRatio: current?.aspectRatio || "16 / 9" }}
+            >
+              {current?.resolvedType === "iframe" && (
+                <iframe
+                  key={current.url}
+                  src={current.resolvedSrc}
+                  title={current.label}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              )}
+              {current?.resolvedType === "video" && (
+                <video
+                  src={current.resolvedSrc}
+                  controls
+                  className="w-full h-full object-contain"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
+              {current?.resolvedType === "unsupported" && (
+                <div className="p-8 text-center text-white space-y-3 font-[family-name:var(--font-body)]">
+                  <p className="text-sm">Direct Video Link:</p>
+                  <a
+                    href={current.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-block px-4 py-2 bg-white text-black font-bold hover:scale-105 transition-transform ${FOCUS_RING}`}
+                  >
+                    Open External Tutorial &rarr;
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Resources */}
       {question.resources.length > 0 && !isLocked && (
@@ -469,7 +660,7 @@ function VideoWorkspace({
                   href={r.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-[var(--color-accent)] hover:underline font-[family-name:var(--font-body)] break-words"
+                  className={`text-sm text-[var(--color-accent)] hover:underline font-[family-name:var(--font-body)] break-words ${FOCUS_RING} rounded`}
                 >
                   ↗ {r.title}
                 </a>
@@ -482,31 +673,6 @@ function VideoWorkspace({
   );
 }
 
-function TabButton({
-  label,
-  isActive,
-  onClick,
-}: {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "px-4 py-2 text-xs font-bold transition-all font-[family-name:var(--font-heading)]",
-        isActive
-          ? "bg-[var(--color-fg)] text-[var(--color-bg)]"
-          : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]/30",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /* Answer Workspace (center column)                                            */
 /* -------------------------------------------------------------------------- */
@@ -516,11 +682,13 @@ function AnswerWorkspace({
   isLocked,
   userHasPremium,
   categorySlug,
+  reduceMotion,
 }: {
   question: WorkspaceActiveQuestion;
   isLocked: boolean;
   userHasPremium: boolean;
   categorySlug: string;
+  reduceMotion: boolean;
 }) {
   const [tab, setTab] = useState<AnswerTab>("summary");
   const { personalizedAnswers, isGenerating, activeResumeName, activeResumeId } =
@@ -529,22 +697,20 @@ function AnswerWorkspace({
 
   return (
     <Card decoration="none" className="border-2 border-[var(--color-border)] h-full flex flex-col">
-      {/* Tabs */}
-      <div className="flex border-b-2 border-[var(--color-border-light)] font-[family-name:var(--font-heading)] shrink-0">
+      <div className="flex border-b-2 border-[var(--color-border-light)] font-[family-name:var(--font-heading)] shrink-0" role="tablist" aria-label="Answer sections">
         <AnswerTabButton label="🔑 Short Summary" isActive={tab === "summary"} onClick={() => setTab("summary")} />
         <AnswerTabButton label="💡 Detailed" isActive={tab === "detailed"} onClick={() => setTab("detailed")} />
         <AnswerTabButton label="🎯 Personalized" isActive={tab === "personalized"} onClick={() => setTab("personalized")} />
       </div>
 
-      {/* Scrollable content (internal scroll — no page layout shift) */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={`${question._id}-${tab}`}
-            initial={{ opacity: 0, y: 6 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+            transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
             className="font-[family-name:var(--font-body)]"
           >
             {isLocked ? (
@@ -583,7 +749,6 @@ function AnswerWorkspace({
           </motion.div>
         </AnimatePresence>
 
-        {/* Suggest-edit console */}
         {!isLocked && <SuggestEditForm question={question} />}
       </div>
     </Card>
@@ -602,12 +767,15 @@ function AnswerTabButton({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={isActive}
       onClick={onClick}
       className={[
         "flex-1 px-2 py-2.5 text-xs sm:text-sm font-bold transition-all font-[family-name:var(--font-heading)] border-r-2 border-[var(--color-border-light)] last:border-r-0",
         isActive
           ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
           : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]/30",
+        FOCUS_RING,
       ].join(" ")}
     >
       {label}
@@ -641,9 +809,7 @@ function PersonalizedPanel({
         <div className="flex items-center gap-2 mb-3">
           <Badge variant="success">✓ Personalized to your resume</Badge>
           {activeResumeName && (
-            <span className="text-xs text-[var(--color-fg-muted)] font-mono">
-              Based on: {activeResumeName}
-            </span>
+            <span className="text-xs text-[var(--color-fg-muted)] font-mono">Based on: {activeResumeName}</span>
           )}
         </div>
         <div
@@ -740,7 +906,7 @@ function SuggestEditForm({ question }: { question: WorkspaceActiveQuestion }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-sm font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg-muted)] hover:text-[var(--color-accent)]"
+          className={`text-sm font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] ${FOCUS_RING} rounded`}
         >
           💡 Improve this solution / suggest an edit
         </button>
@@ -760,7 +926,7 @@ function SuggestEditForm({ question }: { question: WorkspaceActiveQuestion }) {
             rows={3}
             required
             placeholder="Paste an alternate code block, worked STAR steps, or describe the correction..."
-            className="w-full border-2 px-3 py-2 bg-[var(--color-bg)] text-[var(--color-fg)] font-[family-name:var(--font-body)] border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)]"
+            className={`w-full border-2 px-3 py-2 bg-[var(--color-bg)] text-[var(--color-fg)] font-[family-name:var(--font-body)] border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] ${FOCUS_RING}`}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={sending}
@@ -769,7 +935,7 @@ function SuggestEditForm({ question }: { question: WorkspaceActiveQuestion }) {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="px-3 py-1.5 text-sm font-bold border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)]"
+              className={`px-3 py-1.5 text-sm font-bold border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] ${FOCUS_RING}`}
             >
               Cancel
             </button>
@@ -784,116 +950,90 @@ function SuggestEditForm({ question }: { question: WorkspaceActiveQuestion }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Question Navigator (right column / drawer)                                  */
+/* Question List (right column / drawer) — compact, animated cards             */
 /* -------------------------------------------------------------------------- */
 
-function QuestionNavigator({
+const QuestionListItem = React.memo(function QuestionListItem({
+  q,
+  isActive,
+  onSelect,
+}: {
+  q: WorkspaceQuestionNav;
+  isActive: boolean;
+  onSelect: (slug: string) => void;
+}) {
+  const difficultyBadge = `difficulty-${q.difficulty}` as
+    | "difficulty-easy"
+    | "difficulty-medium"
+    | "difficulty-hard";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(q.slug)}
+      aria-current={isActive ? "true" : undefined}
+      className={[
+        "w-full text-left pl-3 pr-3 py-2.5 border-2 border-l-4 transition-all flex items-start gap-2 relative",
+        isActive
+          ? "border-[var(--color-accent)] border-l-[var(--color-accent)] bg-[var(--color-accent)]/10"
+          : "border-[var(--color-border-light)] border-l-transparent bg-[var(--color-bg)] hover:border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]/40 hover:-translate-y-px",
+        FOCUS_RING,
+      ].join(" ")}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="font-[family-name:var(--font-heading)] font-bold text-[13px] leading-snug text-[var(--color-fg)]">
+          {q.question}
+        </p>
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+          <Badge variant={difficultyBadge}>{q.difficulty}</Badge>
+          {q.hasVideo && (
+            <span className="text-[10px] font-bold text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
+              🎬 {q.videoCount}
+            </span>
+          )}
+          {q.isPremium && <span className="text-[10px] font-bold text-[var(--color-warning)]" aria-label="Premium">🔒</span>}
+          {q.isFavorited && <span className="text-[10px]" title="Favorited" aria-label="Favorited">⭐</span>}
+          {q.isPracticed && <span className="text-[10px]" title="Practiced" aria-label="Practiced">✅</span>}
+        </div>
+      </div>
+      <span className="text-[10px] text-[var(--color-fg-muted)] font-mono shrink-0 mt-0.5">#{q.frequencyRank}</span>
+    </button>
+  );
+});
+
+function QuestionList({
   questions,
   activeId,
-  search,
-  difficulty,
-  onSearchChange,
-  onDifficultyChange,
   onSelect,
 }: {
   questions: WorkspaceQuestionNav[];
   activeId: string;
-  search: string;
-  difficulty: DifficultyFilter;
-  onSearchChange: (v: string) => void;
-  onDifficultyChange: (d: DifficultyFilter) => void;
   onSelect: (slug: string) => void;
 }) {
-  const activeRef = useRef<HTMLButtonElement | null>(null);
+  const activeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest" });
   }, [activeId]);
 
-  const difficultyBadge = (d: WorkspaceQuestionNav["difficulty"]) =>
-    `difficulty-${d}` as "difficulty-easy" | "difficulty-medium" | "difficulty-hard";
+  if (questions.length === 0) {
+    return (
+      <div className="text-center py-12 text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
+        No questions match your filter.
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Search + filter */}
-      <div className="shrink-0 p-3 border-b-2 border-[var(--color-border)] space-y-2 bg-[var(--color-bg)]">
-        <Input
-          label="Search this folder"
-          placeholder="e.g. recursion, arrays..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          aria-label="Search questions"
-        />
-        <div className="flex border-2 border-[var(--color-border)] bg-[var(--color-bg-alt)]/30 p-0.5">
-          {DIFFICULTIES.map((d) => (
-            <button
-              key={d.key}
-              type="button"
-              onClick={() => onDifficultyChange(d.key)}
-              className={[
-                "flex-1 px-2 py-1 text-xs font-bold font-[family-name:var(--font-heading)] transition-all",
-                difficulty === d.key
-                  ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
-                  : "text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]",
-              ].join(" ")}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* List */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
-        {questions.length === 0 ? (
-          <div className="text-center py-12 text-sm text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
-            No questions match your filter.
+    <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
+      {questions.map((q) => {
+        const isActive = q._id === activeId;
+        return (
+          <div key={q._id} ref={isActive ? activeRef : undefined}>
+            <QuestionListItem q={q} isActive={isActive} onSelect={onSelect} />
           </div>
-        ) : (
-          questions.map((q) => {
-            const isActive = q._id === activeId;
-            return (
-              <button
-                key={q._id}
-                type="button"
-                onClick={() => onSelect(q.slug)}
-                ref={isActive ? activeRef : undefined}
-                aria-current={isActive ? "true" : undefined}
-                className={[
-                  "w-full text-left p-3 border-2 transition-all flex items-start gap-2",
-                  isActive
-                    ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 shadow-sm"
-                    : "border-[var(--color-border-light)] bg-[var(--color-bg)] hover:border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]/40",
-                ].join(" ")}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-[family-name:var(--font-heading)] font-bold text-sm text-[var(--color-fg)] leading-snug">
-                    {q.question}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    <Badge variant={difficultyBadge(q.difficulty)}>{q.difficulty}</Badge>
-                    {q.hasVideo && (
-                      <span className="text-[10px] font-bold text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
-                        🎬 {q.videoCount}
-                      </span>
-                    )}
-                    {q.isPremium && (
-                      <span className="text-[10px] font-bold text-[var(--color-warning)]">🔒</span>
-                    )}
-                    {q.isFavorited && (
-                      <span className="text-[10px]" title="Favorited" aria-label="Favorited">⭐</span>
-                    )}
-                    {q.isPracticed && (
-                      <span className="text-[10px]" title="Practiced" aria-label="Practiced">✅</span>
-                    )}
-                  </div>
-                </div>
-                <span className="text-[10px] text-[var(--color-fg-muted)] font-mono shrink-0">#{q.frequencyRank}</span>
-              </button>
-            );
-          })
-        )}
-      </div>
+        );
+      })}
     </div>
   );
 }
