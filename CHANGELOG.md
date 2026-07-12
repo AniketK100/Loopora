@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.2] - 2026-07-12 — Repair video persistence pipeline (silent client-side drop)
+
+### Fixed
+- **Silent video loss in the admin form** — `QuestionForm.handleSubmit` filtered video rows with `v.url && v.label`, which discarded any row missing a presenter label. Because the live preview/validation is URL-based, an admin could paste a URL, see it preview correctly, and click Save with the label blank — the row was dropped, the request went out as `videos: []`, the API saved successfully with an empty array, and the video vanished from the edit page, question page and dedicated page (data WAS persisted as empty, not lost by the DB). The submit handler now never silently drops a previewed video:
+  - A URL with a blank label auto-defaults to the detected platform name (e.g. "Instagram Reels").
+  - An invalid/unsupported URL blocks submission with a clear error instead of being dropped.
+  - Truly blank rows (no url and no label) are skipped.
+- **Bulk import dropped videos** — `/api/bulk-import` validated questions with `questionCreateSchema` (whose `videos` only carries `label/url/order`) but called `Question.create(validated)` without normalizing, so imported videos lacked the required `provider`/`embedUrl` and the question create threw and was skipped. Imported videos are now normalized via `normalizeVideoUrl` like the main POST/PATCH routes.
+- **ISR staleness on public pages** — `POST`/`PATCH /api/questions` now call `revalidatePath` for the category and question detail pages so a saved/edited video appears immediately instead of being hidden by the 1-hour ISR cache.
+
+### Verified (against live MongoDB)
+- Before fix: label-less reel → payload `videos: []` → Mongo doc `videos: []` (lost).
+- After fix: same input → payload `videos: [{label:"Instagram Reels", url, order}]` → Mongo stores it → GET detail returns it → edit-page default values contain it.
+
 ## [2.2.1] - 2026-07-12 — Video persistence & platform coverage fix
 
 ### Fixed

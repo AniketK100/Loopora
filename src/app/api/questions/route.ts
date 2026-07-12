@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
@@ -230,6 +231,14 @@ export async function POST(request: NextRequest) {
       isPremium,
       isPublished,
     });
+
+    // Keep ISR-cached public pages fresh so a newly saved video appears
+    // immediately (no 1-hour stale window).
+    const createdCat = await Category.findById(category);
+    if (createdCat) {
+      revalidatePath(`/interview/${createdCat.slug}`);
+      revalidatePath(`/interview/${createdCat.slug}/${newQuestion.slug}`);
+    }
 
     const response: ApiResponse<typeof newQuestion> = {
       success: true,

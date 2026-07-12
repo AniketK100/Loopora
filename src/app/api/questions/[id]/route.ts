@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
@@ -207,6 +208,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { success: false, error: "Question not found" },
         { status: 404 }
       );
+    }
+
+    // Keep ISR-cached public pages fresh so an edited video appears
+    // immediately (no 1-hour stale window).
+    const patchedCat = await Category.findById(question.category);
+    if (patchedCat) {
+      revalidatePath(`/interview/${patchedCat.slug}`);
+      revalidatePath(`/interview/${patchedCat.slug}/${question.slug}`);
     }
 
     const response: ApiResponse<typeof question> = {

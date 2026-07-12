@@ -13,6 +13,7 @@ import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
 import { Question } from "@/lib/db/models/Question";
 import { categoryCreateSchema, questionCreateSchema } from "@/lib/validators";
+import { normalizeVideoUrl } from "@/lib/embed/normalize";
 import { requireRole } from "@/lib/auth/rbac";
 import { ApiResponse } from "@/types";
 
@@ -131,8 +132,22 @@ export async function POST(request: NextRequest) {
         continue; // Already exists
       }
 
+      // Normalize video URLs into the stored shape (provider + embedUrl are
+      // required by the VideoSchema; without this the create would throw and
+      // the question would be silently skipped).
+      const normalizedVideos = (validated.videos || []).map((video) => {
+        const n = normalizeVideoUrl(video.url);
+        return {
+          label: video.label,
+          provider: n.provider,
+          url: n.url,
+          embedUrl: n.embedUrl,
+          order: video.order,
+        };
+      });
+
       try {
-        await Question.create(validated);
+        await Question.create({ ...validated, videos: normalizedVideos });
         results.questionsCreated++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Database write failure";

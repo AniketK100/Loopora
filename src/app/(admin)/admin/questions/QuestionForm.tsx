@@ -157,14 +157,36 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
     setError(null);
     setIsLoading(false);
 
-    // Filter out blank video rows and parse order
-    const cleanedVideos = videos
-      .filter((v) => v.url.trim() !== "" && v.label.trim() !== "")
-      .map((v, i) => ({
-        label: v.label.trim(),
-        url: v.url.trim(),
-        order: i,
-      }));
+    // Build the video payload. NEVER silently drop a valid, previewed video:
+    // - truly blank rows (no url AND no label) are skipped
+    // - a URL with no label auto-defaults to the detected platform name
+    // - an invalid/unsupported URL blocks submission with a clear error
+    // (Previously the filter `v.url && v.label` discarded any row missing a
+    //  label, so a pasted, previewed URL was saved as an empty videos array.)
+    const videoErrors: string[] = [];
+    const cleanedVideos: { label: string; url: string; order: number }[] = [];
+    let videoOrder = 0;
+    for (const v of videos) {
+      const url = v.url.trim();
+      const label = v.label.trim();
+      if (!url && !label) continue; // truly blank row
+      if (!url) {
+        videoErrors.push(`A video row is missing its URL (label "${label}").`);
+        continue;
+      }
+      const parsed = parseVideoUrl(url);
+      if (!parsed.ok || !parsed.embedUrl) {
+        videoErrors.push(`Video URL "${url}" is not a supported platform.`);
+        continue;
+      }
+      cleanedVideos.push({ label: label || parsed.platformName, url, order: videoOrder++ });
+    }
+
+    if (videoErrors.length > 0) {
+      setError(videoErrors.join(" "));
+      setIsLoading(false);
+      return;
+    }
 
     // Parse tags to trim array
     const parsedTags = tagsString
