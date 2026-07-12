@@ -7,7 +7,7 @@
  * @module components/ui/Input
  */
 
-import React from "react";
+import React, { useId } from "react";
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -21,7 +21,8 @@ export interface InputProps
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, className = "", id, ...props }, ref) => {
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
+    const generatedId = useId();
+    const inputId = id || label?.toLowerCase().replace(/\s+/g, "-") || generatedId;
 
     return (
       <div className="flex flex-col gap-1.5">

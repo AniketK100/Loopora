@@ -39,3 +39,6 @@ export { FavoriteToggle } from "./FavoriteToggle";
 export { PracticedToggle } from "./PracticedToggle";
 
 export { default as UnderMaintenance } from "./UnderMaintenance";
+
+export { Skeleton, SkeletonCard } from "./Skeleton";
+export type { SkeletonProps } from "./Skeleton";

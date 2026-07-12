@@ -17,6 +17,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input, Select, Toggle, Card } from "@/components/ui";
 import { Difficulty } from "@/types";
+import { parseVideoUrl } from "@/lib/video/parseVideoUrl";
 
 interface QuestionFormProps {
   categories: { _id: string; name: string }[];
@@ -45,6 +46,8 @@ interface VideoRow {
   url: string;
   order: number;
   status: string; // Live parsed provider status
+  embedUrl: string | null;
+  embedKind: "iframe" | "video" | null;
 }
 
 export function QuestionForm({ categories, initialData }: QuestionFormProps) {
@@ -66,30 +69,27 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
   const [exampleAnswer, setExampleAnswer] = useState(initialData?.answer.example || "");
 
   // Video management
-  const initialVideos: VideoRow[] = (initialData?.videos || []).map((v, i) => ({
-    localId: `initial-${i}`,
-    label: v.label,
-    url: v.url,
-    order: v.order,
-    status: getUrlProviderStatus(v.url),
-  }));
+  const initialVideos: VideoRow[] = (initialData?.videos || []).map((v, i) => {
+    const parsed = parseVideoUrl(v.url);
+    return {
+      localId: `initial-${i}`,
+      label: v.label,
+      url: v.url,
+      order: v.order,
+      status: parsed.status,
+      embedUrl: parsed.embedUrl,
+      embedKind: parsed.embedKind,
+    };
+  });
   const [videos, setVideos] = useState<VideoRow[]>(initialVideos);
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Helper to validate pasted video URLs on the fly
-  function getUrlProviderStatus(url: string): string {
-    if (!url) return "";
-    const cleanUrl = url.trim();
-    if (cleanUrl.includes("youtube.com") || cleanUrl.includes("youtu.be")) return "YouTube ✅";
-    if (cleanUrl.includes("vimeo.com")) return "Vimeo ✅";
-    if (cleanUrl.includes("loom.com")) return "Loom ✅";
-    if (cleanUrl.includes("drive.google.com")) return "Google Drive Preview ✅";
-    if (/\.(mp4|webm|ogg)$/i.test(cleanUrl) || (cleanUrl.includes("res.cloudinary.com") && cleanUrl.includes("/video/upload/"))) {
-      return "Direct MP4/Cloudinary ✅";
-    }
-    return "Unsupported URL format ❌";
+  // Parse pasted video URLs on the fly for live provider feedback.
+  function resolveVideoRow(url: string): Pick<VideoRow, "status" | "embedUrl" | "embedKind"> {
+    const parsed = parseVideoUrl(url);
+    return { status: parsed.status, embedUrl: parsed.embedUrl, embedKind: parsed.embedKind };
   }
 
   // Handle live slug generation
@@ -117,6 +117,8 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
         url: "",
         order: videos.length,
         status: "",
+        embedUrl: null,
+        embedKind: null,
       },
     ]);
   };
@@ -131,7 +133,10 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
         if (v.localId !== localId) return v;
         const updated = { ...v, [field]: value };
         if (field === "url") {
-          updated.status = getUrlProviderStatus(value);
+          const resolved = resolveVideoRow(value);
+          updated.status = resolved.status;
+          updated.embedUrl = resolved.embedUrl;
+          updated.embedKind = resolved.embedKind;
         }
         return updated;
       })
@@ -400,39 +405,63 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
               {videos.map((vid) => (
                 <div
                   key={vid.localId}
-                  className="flex flex-col sm:flex-row gap-4 p-4 border-2 border-dashed border-[var(--color-border-light)] wobbly-sm bg-[var(--color-bg-alt)]/30 items-start sm:items-center"
+                  className="flex flex-col gap-4 p-4 border-2 border-dashed border-[var(--color-border-light)] wobbly-sm bg-[var(--color-bg-alt)]/30"
                 >
-                  <div className="w-full sm:w-1/3">
-                    <Input
-                      label="Video Presenter Label"
-                      placeholder="e.g. Explained by Priya"
-                      value={vid.label}
-                      onChange={(e) => handleVideoChange(vid.localId, "label", e.target.value)}
-                      disabled={isLoading}
-                    />
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <div className="w-full sm:w-1/3">
+                      <Input
+                        label="Video Presenter Label"
+                        placeholder="e.g. Explained by Priya"
+                        value={vid.label}
+                        onChange={(e) => handleVideoChange(vid.localId, "label", e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="w-full sm:flex-1">
+                      <Input
+                        label="URL (YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram, direct MP4)"
+                        placeholder="e.g. https://www.instagram.com/reel/ABC123/"
+                        value={vid.url}
+                        onChange={(e) => handleVideoChange(vid.localId, "url", e.target.value)}
+                        disabled={isLoading}
+                        helperText={vid.status ? `Detected: ${vid.status}` : undefined}
+                        error={vid.url.trim() !== "" && vid.embedUrl === null ? "Unsupported URL format" : undefined}
+                      />
+                    </div>
+                    <div className="pt-6">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeVideoRow(vid.localId)}
+                        disabled={isLoading}
+                        className="!border-[var(--color-error)] !text-[var(--color-error)] hover:!bg-red-50"
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                  <div className="w-full sm:flex-1">
-                    <Input
-                      label="URL (YouTube, Loom, Vimeo, Drive)"
-                      placeholder="e.g. https://www.youtube.com/watch?v=..."
-                      value={vid.url}
-                      onChange={(e) => handleVideoChange(vid.localId, "url", e.target.value)}
-                      disabled={isLoading}
-                      helperText={vid.status ? `Detected: ${vid.status}` : undefined}
-                    />
-                  </div>
-                  <div className="pt-6">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeVideoRow(vid.localId)}
-                      disabled={isLoading}
-                      className="!border-[var(--color-error)] !text-[var(--color-error)] hover:!bg-red-50"
-                    >
-                      Delete
-                    </Button>
-                  </div>
+
+                  {vid.embedUrl && (
+                    <div className="w-full pt-2">
+                      <p className="text-xs font-semibold text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] mb-2">
+                        Preview
+                      </p>
+                      <div className="aspect-video w-full max-w-md overflow-hidden rounded-lg border-2 border-[var(--color-border)] bg-black/5">
+                        {vid.embedKind === "iframe" ? (
+                          <iframe
+                            src={vid.embedUrl}
+                            title={`Preview for ${vid.label || vid.url}`}
+                            className="h-full w-full"
+                            loading="lazy"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video src={vid.embedUrl} controls className="h-full w-full" />
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -257,7 +257,7 @@ export function LandingHero({
       <div className="flex-1 max-w-xl space-y-6 z-10 text-left">
         <h1
           id="landing-title"
-          className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[#f0e6d6] leading-tight flex items-baseline whitespace-nowrap"
+          className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[#f0e6d6] leading-tight flex items-baseline flex-wrap"
           style={{ fontFamily: "var(--font-heading)" }}
         >
           <span className="shrink-0">Crack the&nbsp;</span>

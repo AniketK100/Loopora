@@ -621,8 +621,13 @@ export default function ProfilePage() {
 
               {/* Erasure Warning Confirmation Modal */}
               {showDeleteModal && (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-                  <Card className="max-w-md w-full p-6 md:p-8 space-y-4 animate-in fade-in zoom-in duration-200">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Delete account"
+                  className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 overflow-y-auto"
+                >
+                  <Card className="max-w-md w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-4 animate-in fade-in zoom-in duration-200">
                     <h4 className="text-2xl font-bold text-[var(--color-accent)]" style={{ fontFamily: "var(--font-heading)" }}>
                       Are you absolutely sure?
                     </h4>

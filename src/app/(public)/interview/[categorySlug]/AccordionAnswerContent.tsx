@@ -118,7 +118,7 @@ export function AccordionAnswerContent({
           </div>
         ) : (
           <div
-            className="text-base text-[var(--color-fg)] leading-relaxed space-y-3 font-[family-name:var(--font-body)]"
+            className="text-base text-[var(--color-fg)] leading-relaxed space-y-3 font-[family-name:var(--font-body)] break-words [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_img]:max-w-full"
             dangerouslySetInnerHTML={{ __html: answer.detailed }}
           />
         )}
@@ -178,7 +178,7 @@ export function AccordionAnswerContent({
               </span>
             </div>
             <div
-              className="text-sm text-[var(--color-fg)] leading-relaxed space-y-2 font-[family-name:var(--font-body)]"
+              className="text-sm text-[var(--color-fg)] leading-relaxed space-y-2 font-[family-name:var(--font-body)] break-words [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_img]:max-w-full"
               dangerouslySetInnerHTML={{
                 __html: typeof personalizedAnswer === "string"
                   ? personalizedAnswer
@@ -210,7 +210,7 @@ export function AccordionAnswerContent({
       {!isLocked && answer.example ? (
         <CollapsibleSection defaultOpen icon="📝" title="Worked Example (STAR Format)">
           <div
-            className="text-sm text-[var(--color-fg)] leading-relaxed space-y-3 font-[family-name:var(--font-body)]"
+            className="text-sm text-[var(--color-fg)] leading-relaxed space-y-3 font-[family-name:var(--font-body)] break-words [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_img]:max-w-full"
             dangerouslySetInnerHTML={{ __html: answer.example }}
           />
         </CollapsibleSection>

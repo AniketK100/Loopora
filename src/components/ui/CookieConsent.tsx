@@ -32,17 +32,24 @@ export function CookieConsent() {
     setIsVisible(false);
   };
 
+  const handleReject = () => {
+    localStorage.setItem("loopora_cookie_consent", "false");
+    setIsVisible(false);
+  };
+
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 animate-fade-in-up">
-      <div 
-        className="bg-[var(--color-bg-alt)] border-2 border-[var(--color-border)] wobbly-sm p-5 space-y-3 relative overflow-hidden"
+    <div className="fixed bottom-0 left-0 right-0 md:bottom-4 md:left-auto md:right-4 md:max-w-md z-50 animate-fade-in-up pb-[env(safe-area-inset-bottom)]">
+      <div
+        role="dialog"
+        aria-label="Cookie notice"
+        className="bg-[var(--color-bg-alt)] border-t-2 md:border-2 border-[var(--color-border)] wobbly-sm p-5 space-y-3 relative overflow-hidden"
         style={{ boxShadow: "var(--shadow-emphasized)" }}
       >
         {/* Binder accent strip */}
         <div className="absolute top-0 left-0 bottom-0 w-2 bg-[var(--color-accent)]" />
-        
+
         <div className="pl-3 space-y-2">
           <h4 className="text-base font-bold text-[var(--color-fg)] font-[family-name:var(--font-heading)] flex items-center gap-1.5">
             <span>🍪</span>
@@ -57,11 +64,19 @@ export function CookieConsent() {
         </div>
 
         <div className="pl-3 flex items-center justify-end gap-3">
-          <Button 
-            variant="primary" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReject}
+            className="text-xs font-bold"
+          >
+            Reject
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleAccept}
-            className="text-xs font-bold py-1 px-4"
+            className="text-xs font-bold"
           >
             Accept Cookies
           </Button>

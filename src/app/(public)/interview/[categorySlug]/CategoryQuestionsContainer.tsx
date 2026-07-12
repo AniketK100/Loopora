@@ -151,10 +151,10 @@ export function CategoryQuestionsContainer({
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-2 gap-6 lg:gap-8 items-start relative">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-start relative">
 
       {/* LEFT PANE: VideoPlayerPanel */}
-      <div className={`w-full md:col-span-2 lg:col-span-1 lg:sticky lg:top-24 space-y-4 ${!activeQuestionId ? "hidden lg:block" : ""}`}>
+      <div className="hidden md:block w-full lg:col-span-1 lg:sticky lg:top-24 space-y-4">
         {activeQuestion ? (
           <VideoPlayerPanel
             videos={activeVideos}

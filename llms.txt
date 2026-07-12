@@ -11,11 +11,24 @@ Loopora is an SEO-optimized interview preparation SaaS with a hand-drawn noteboo
 - **Typography:** Kalam (headings) + Patrick Hand (body)
 
 ## Key Folder Paths
-- `src/app/(public)/` — Public-facing pages (landing, folders library, dynamic categories, solutions view)
+- `src/app/(public)/` — Public-facing pages (landing, folders library, dynamic categories, solutions view, `/suggest`, `/search`, `/profile`)
 - `src/app/(admin)/admin/` — Content management system (CMS) dashboard, audit logs, feature flags, bulk import
 - `src/app/api/` — API handlers (rate-limited auth, suggestions, bulk-import, flags)
-- `src/lib/db/` — Database connection singleton and schemas (User, Category, Question, FeatureFlag, AuditLog, Suggestion)
-- `src/components/ui/` — Wobbly hand-drawn aesthetic base components (Button, Card, Input, Accordion)
+- `src/lib/db/` — Database connection singleton and schemas (User, Category, Question, FeatureFlag, AuditLog, Suggestion, Resume, ResumeAnalysis)
+- `src/lib/video/` — `parseVideoUrl` declarative video URL parser (platform registry: YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/Reels/TV, direct files) with `getEmbedUrl` wrapper
+- `src/components/ui/` — Wobbly hand-drawn aesthetic base components (Button, Card, Input, Accordion, Skeleton, Select, Toggle)
+
+## Public Routes
+- `/` — Cinematic landing page
+- `/interview` — Category/folder library
+- `/interview/[categorySlug]` — Questions in a category
+- `/interview/[categorySlug]/[questionSlug]` — Solution view with video player + AI answers
+- `/search` — Full-text search
+- `/suggest` — Submit a question suggestion (POSTs to `/api/suggestions`)
+- `/privacy`, `/terms`, `/cookies` — Legal pages
+- `/profile` — Resume management + folder personalization (auth required)
+- `/login`, `/signup` — Auth (excluded from indexing)
+- `/admin/*` — CMS (admin/editor only, excluded from indexing)
 
 ## Database Models
 

@@ -145,8 +145,13 @@ export function FolderSelectionDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-      <Card className="max-w-lg w-full p-6 md:p-8 space-y-6 animate-in fade-in zoom-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Select interview folders"
+      className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <Card className="max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 animate-in fade-in zoom-in duration-200">
         {/* Header */}
         <div className="space-y-2">
           <h2

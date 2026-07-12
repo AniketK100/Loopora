@@ -63,7 +63,7 @@ export function ImpersonationBanner() {
 
   return (
     <div
-      className="w-full bg-amber-500 border-b border-amber-600 text-black py-2.5 px-4 sticky top-0 z-[9999] shadow-md font-[family-name:var(--font-heading)] font-bold text-xs sm:text-sm"
+      className="w-full bg-amber-500 border-b border-amber-600 text-black py-2.5 px-4 shadow-md font-[family-name:var(--font-heading)] font-bold text-xs sm:text-sm"
       style={{ letterSpacing: "0.025em" }}
     >
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">

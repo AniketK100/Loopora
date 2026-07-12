@@ -15,6 +15,8 @@ import { headers } from "next/headers";
 import { CookieConsent, UnderMaintenance } from "@/components/ui";
 import { isMaintenanceModeActive } from "@/lib/flags";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { Footer } from "@/components/Footer";
+import { MobileNav } from "@/components/MobileNav";
 import { connectDB } from "@/lib/db/connection";
 import { User } from "@/lib/db/models/User";
 import { PersonalizedAnswersProvider } from "@/contexts/PersonalizedAnswersContext";
@@ -90,6 +92,8 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
               </Link>
             </nav>
 
+            <MobileNav />
+
             <div className="flex items-center gap-4 font-[family-name:var(--font-heading)] font-bold">
               {user ? (
                 <div className="flex items-center gap-3">
@@ -137,61 +141,7 @@ export default async function PublicLayout({ children }: PublicLayoutProps) {
           </PersonalizedAnswersProvider>
         </main>
 
-        <footer className="border-t-2 border-[var(--color-border)] bg-[var(--color-bg-alt)] py-10 mt-12 text-center text-sm font-[family-name:var(--font-body)] text-[var(--color-fg-muted)]">
-          <div className="max-w-7xl mx-auto px-4 space-y-6">
-            <div className="space-y-2">
-              <p className="font-bold font-[family-name:var(--font-heading)] text-2xl text-[var(--color-fg)]">
-                Loopora
-              </p>
-              <p className="text-sm max-w-md mx-auto">
-                The hand-drawn notebook for interview success. Curated questions, model answers, and video walkthroughs to help you ace every interview.
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-xs font-[family-name:var(--font-heading)] font-bold">
-              <Link
-                href="/interview"
-                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-bg)] transition-colors"
-              >
-                Questions Library
-              </Link>
-              <Link
-                href="/search"
-                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-post-it-dark)] hover:text-[var(--color-fg)] transition-colors"
-              >
-                Search
-              </Link>
-              <Link
-                href="/privacy"
-                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="/terms"
-                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-success)] hover:text-[var(--color-bg)] transition-colors"
-              >
-                Terms of Service
-              </Link>
-              <Link
-                href="/cookies"
-                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-warning)] hover:text-[var(--color-bg)] transition-colors"
-              >
-                Cookie Policy
-              </Link>
-              <a
-                href="https://github.com/AniketK100/Loopora"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly-sm text-[var(--color-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] transition-colors"
-              >
-                GitHub
-              </a>
-            </div>
-            <div className="flex flex-col items-center gap-1 text-xs">
-              <p>&copy; {new Date().getFullYear()} Loopora. Built by <a href="https://github.com/AniketK100" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--color-accent)]">Aniket Kakad</a>.</p>
-            </div>
-          </div>
-        </footer>
+        <Footer />
         <CookieConsent />
       </div>
     </>

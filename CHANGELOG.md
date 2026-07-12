@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.2.0] - 2026-07-12 — Final UX, Performance, Responsive & Documentation Polish
+
+### Added
+- **Video URL parser (future-proof architecture)**: New declarative `parseVideoUrl` utility in `src/lib/video/parseVideoUrl.ts` with a platform registry. Supports YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts, Instagram Reels, Instagram TV and direct video files (MP4/WebM/OGG + Cloudinary). Detects platform, normalizes URL, validates input, builds embed URLs and returns proper error messages.
+- **Admin video preview**: Question editor now shows a live iframe/`<video>` preview for supported URLs alongside the detected-platform status.
+- **Public "Suggest Q&A" page** (`/suggest`): Replaces the previously broken nav link with a real form posting to `POST /api/suggestions`. Added to the sitemap.
+- **Mobile navigation**: Hamburger menu (`MobileNav`) on the public header for Library / Search / Suggest Q&A on small screens.
+- **Route-level loading skeletons**: `loading.tsx` files for interview, category, question detail, search, profile and admin routes using a shared `Skeleton`/`SkeletonCard` design-system component for instant navigation feedback and zero CLS.
+- **Compact footer**: New `Footer` component with GitHub, copyright, developer credit, version and primary navigation; replaces the oversized inline footer.
+- **Cookie consent**: Added a "Reject" option, larger touch target, `role="dialog"` and `env(safe-area-inset-bottom)` padding.
+- **Accessible inputs**: `Input` now generates a stable `useId` when no label is provided.
+
+### Changed
+- **Admin sidebar**: Sticky, full-height, responsive layout with a pinned brand header and pinned profile footer. Nav links scroll independently and highlight the active route.
+- **Responsive answer rendering**: Rendered model answers now contain `pre`/`table`/`img` overflow (`[&_pre]:overflow-x-auto` etc.) and `break-words` to prevent horizontal page scroll on mobile.
+- **Modals**: `ResumeUploadPanel` auth modal and `FolderSelectionDialog` now use valid design tokens (fixing an invisible/transparent background + button), are scrollable (`overflow-y-auto`), capped at `max-h-[90vh]`, and expose `role="dialog"` / `aria-modal`. `PremiumUpgradeModal` "Upgrade Now" now navigates to the profile page, is dismissable via Escape, and is scrollable.
+- **Impersonation banner**: No longer `sticky`, eliminating overlap with the sticky public/admin headers.
+- **Landing hero**: Title no longer forced to a single `whitespace-nowrap` line; it wraps gracefully on small viewports.
+- **Category layout grid**: Simplified to a clean 2-column grid at `md` with the video panel visible from `md` up.
+
+### Performance
+- ISR (`revalidate = 3600`) already in place on interview, category and question-detail routes; added route-level `loading.tsx` skeletons to remove the perceived-slow-navigation gap.
+- Shared `Skeleton` component avoids duplicated loading markup across routes.
+
+### SEO
+- **sitemap.ts**: Now includes `/search`, `/suggest`, `/privacy`, `/terms` and `/cookies` (previously missing).
+- **robots.ts**: Now disallows `/profile` (authenticated, non-indexable).
+
+### Docs
+- README, CHANGELOG, llms.txt and architecture docs synchronized with the current codebase (video platform support, `/suggest` route, footer, sidebar behavior).
+
 ## [2.1.0] - 2026-07-10 — Final Production Hardening
 
 ### Security

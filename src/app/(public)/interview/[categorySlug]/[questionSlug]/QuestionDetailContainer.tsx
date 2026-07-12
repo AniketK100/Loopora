@@ -248,7 +248,7 @@ export function QuestionDetailContainer({
                 💡 Detailed Model Explanation
               </h4>
               <div
-                className="text-base text-[var(--color-fg)] leading-relaxed space-y-4 font-[family-name:var(--font-body)]"
+                className="text-base text-[var(--color-fg)] leading-relaxed space-y-4 font-[family-name:var(--font-body)] break-words [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_img]:max-w-full"
                 dangerouslySetInnerHTML={{ __html: question.answer.detailed }}
               />
             </div>
@@ -273,7 +273,7 @@ export function QuestionDetailContainer({
                   )}
                 </div>
                 <div
-                  className="text-base text-[var(--color-fg)] leading-relaxed space-y-3 font-[family-name:var(--font-body)]"
+                  className="text-base text-[var(--color-fg)] leading-relaxed space-y-3 font-[family-name:var(--font-body)] break-words [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_img]:max-w-full"
                   dangerouslySetInnerHTML={{ __html: personalizedAnswer }}
                 />
               </div>
@@ -301,7 +301,7 @@ export function QuestionDetailContainer({
                   📌 Worked Example (STAR Method Breakdown)
                 </h4>
                 <div
-                  className="text-base text-[var(--color-fg)] leading-relaxed space-y-2 font-[family-name:var(--font-body)]"
+                  className="text-base text-[var(--color-fg)] leading-relaxed space-y-2 font-[family-name:var(--font-body)] break-words [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_img]:max-w-full"
                   dangerouslySetInnerHTML={{ __html: question.answer.example }}
                 />
               </div>

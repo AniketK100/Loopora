@@ -25,6 +25,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily" as const,
         priority: 0.9,
       },
+      {
+        url: `${baseUrl}/search`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      },
+      {
+        url: `${baseUrl}/suggest`,
+        lastModified: new Date(),
+        changeFrequency: "monthly" as const,
+        priority: 0.5,
+      },
+      {
+        url: `${baseUrl}/privacy`,
+        lastModified: new Date(),
+        changeFrequency: "yearly" as const,
+        priority: 0.3,
+      },
+      {
+        url: `${baseUrl}/terms`,
+        lastModified: new Date(),
+        changeFrequency: "yearly" as const,
+        priority: 0.3,
+      },
+      {
+        url: `${baseUrl}/cookies`,
+        lastModified: new Date(),
+        changeFrequency: "yearly" as const,
+        priority: 0.3,
+      },
     ];
 
     // 2. Fetch all published categories
@@ -65,14 +95,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Return base static pages as fallback
     const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
     return [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-      },
-      {
-        url: `${baseUrl}/interview`,
-        lastModified: new Date(),
-      },
+      { url: baseUrl, lastModified: new Date() },
+      { url: `${baseUrl}/interview`, lastModified: new Date() },
+      { url: `${baseUrl}/search`, lastModified: new Date() },
+      { url: `${baseUrl}/suggest`, lastModified: new Date() },
+      { url: `${baseUrl}/privacy`, lastModified: new Date() },
+      { url: `${baseUrl}/terms`, lastModified: new Date() },
+      { url: `${baseUrl}/cookies`, lastModified: new Date() },
     ];
   }
 }

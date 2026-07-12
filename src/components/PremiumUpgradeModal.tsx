@@ -9,7 +9,8 @@
 
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 
 interface PremiumUpgradeModalProps {
@@ -18,10 +19,31 @@ interface PremiumUpgradeModalProps {
 }
 
 export function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeModalProps) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
+  const handleUpgrade = () => {
+    onClose();
+    router.push("/profile");
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Upgrade to Premium"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto"
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -32,7 +54,9 @@ export function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeModalProp
       <div className="relative bg-[var(--color-bg)] border-2 border-[var(--color-border)] wobbly p-8 max-w-md w-full mx-4 shadow-[var(--shadow-hover)]">
         {/* Close button */}
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Close"
           className="absolute top-3 right-3 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] text-lg"
         >
           ✕
@@ -101,7 +125,7 @@ export function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeModalProp
             <Button variant="outline" fullWidth onClick={onClose}>
               Maybe Later
             </Button>
-            <Button variant="primary" fullWidth>
+            <Button variant="primary" fullWidth onClick={handleUpgrade}>
               Upgrade Now
             </Button>
           </div>
