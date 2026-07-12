@@ -1,22 +1,22 @@
 /**
  * Category Questions List Page — Server Component
  *
- * Fetches the selected category by slug and its associated questions list.
- * Renders the briefing header and delegates list interactive state to the container.
+ * Renders the shared three-column Interview Workspace for a folder. The active
+ * question defaults to the first published question so the folder opens directly
+ * into the experience; every question keeps its own URL for SEO / sharing.
  *
  * @route /interview/[categorySlug]
  * @see 03_App_Flow.md §1 — Site Map
  */
 
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { connectDB } from "@/lib/db/connection";
 import { Category } from "@/lib/db/models/Category";
-import { Question } from "@/lib/db/models/Question";
-import { auth } from "@/auth";
-import { Card } from "@/components/ui";
-import { CategoryQuestionsContainer } from "./CategoryQuestionsContainer";
+import { getWorkspaceData } from "../workspace-data";
+import { InterviewWorkspace } from "../InterviewWorkspace";
 
 export const revalidate = 3600; // Revalidate every hour (ISR)
 
@@ -30,7 +30,7 @@ export async function generateMetadata({
   await connectDB();
   const { categorySlug } = await params;
   const category = await Category.findOne({ slug: categorySlug.toLowerCase() });
-  
+
   if (!category) return {};
 
   return {
@@ -46,148 +46,53 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
   await connectDB();
   const { categorySlug } = await params;
 
-  // Retrieve category
-  const categoryDoc = await Category.findOne({ slug: categorySlug.toLowerCase() });
-  if (!categoryDoc) {
+  const data = await getWorkspaceData(categorySlug, null);
+
+  if (!data.category) {
     notFound();
   }
 
-  // Retrieve current user authorization status
-  const session = await auth();
-  const user = session?.user;
-  const userHasPremium =
-    user ? user.role === "admin" || user.role === "editor" || !!user.isPremium : false;
-
-  // Retrieve all published questions for this category
-  const questionDocs = await Question.find({
-    category: categoryDoc._id,
-    isPublished: true,
-  }).sort({ frequencyRank: 1 }); // Sort by rank index (lower = floats to top)
-
-  // Serialize Category
-  const categoryData = {
-    name: categoryDoc.name,
-    slug: categoryDoc.slug,
-    description: categoryDoc.description || "",
-    icon: categoryDoc.icon || "",
-  };
-
-  // Serialize Questions
-  const questionsData = questionDocs.map((q) => ({
-    _id: q._id.toString(),
-    slug: q.slug,
-    question: q.question,
-    answer: {
-      short: q.answer.short || "",
-      detailed: q.answer.detailed,
-    },
-    difficulty: q.difficulty,
-    isPremium: q.isPremium,
-    tags: q.tags || [],
-    resources: (q.resources || []).map((r) => ({
-      title: r.title,
-      url: r.url,
-    })),
-    videos: (q.videos || []).map((v) => ({
-      label: v.label,
-      url: v.url,
-      provider: v.provider || "youtube",
-      order: v.order || 0,
-    })),
-  }));
-
-  const iconEmoji = getIconEmoji(categoryDoc.icon);
-
-  // Generate FAQPage JSON-LD structured data for SEO
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": questionsData.map((q) => ({
+    mainEntity: data.questions.map((q) => ({
       "@type": "Question",
-      "name": q.question,
-      "acceptedAnswer": {
+      name: q.question,
+      acceptedAnswer: {
         "@type": "Answer",
-        "text": q.answer.short || q.answer.detailed.replace(/<[^>]+>/g, "").trim(),
+        text: q.question,
       },
     })),
   };
 
   return (
-    <div className="paper-grain min-h-screen py-12">
+    <div className="paper-grain min-h-screen">
       {/* FAQPage JSON-LD Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        
-        {/* Navigation Breadcrumb */}
-        <div className="text-sm font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg-muted)]">
+
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-3">
+        {/* Breadcrumb */}
+        <nav
+          className="text-sm font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg-muted)] mb-2"
+          aria-label="Breadcrumb"
+        >
           <Link href="/interview" className="hover:underline">
             &larr; Folders Library
           </Link>
-        </div>
+        </nav>
 
-        {/* Binder Header Panel */}
-        <Card decoration="tape" className="p-6 md:p-8" style={{ borderLeftWidth: "6px", borderLeftColor: "var(--color-accent)" }}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <span className="capitalize text-xs font-bold text-[var(--color-fg-muted)] font-[family-name:var(--font-body)]">
-                🏷️ {categoryDoc.type.replace("-", " ")} Folder
-              </span>
-              <h1
-                className="text-3xl md:text-4xl font-bold text-[var(--color-fg)] mt-1 flex items-center gap-2"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                <span>{iconEmoji}</span>
-                <span>{categoryData.name}</span>
-              </h1>
-              <p
-                className="text-base text-[var(--color-fg-muted)] mt-2 max-w-2xl font-[family-name:var(--font-body)]"
-              >
-                {categoryData.description || "Review targeted Q&As and practice worked examples."}
-              </p>
-            </div>
-            
-            <div className="hidden sm:block">
-              <span className="inline-block px-3 py-1 bg-[var(--color-bg-alt)] text-[var(--color-fg-muted)] wobbly-sm border border-[var(--color-border-light)] font-bold font-[family-name:var(--font-heading)] text-sm">
-                {questionsData.length} items
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        {/* Questions filter & list container (Client Component) */}
-        <CategoryQuestionsContainer
-          category={categoryData}
-          questions={questionsData}
-          userHasPremium={userHasPremium}
-        />
+        <Suspense fallback={null}>
+          <InterviewWorkspace
+            category={data.category}
+            questions={data.questions}
+            activeQuestion={data.activeQuestion}
+            userHasPremium={data.userHasPremium}
+          />
+        </Suspense>
       </div>
     </div>
   );
-}
-
-/**
- * Fallback Emoji resolver for common folder icons
- */
-function getIconEmoji(iconName?: string): string {
-  switch (iconName?.toLowerCase()) {
-    case "user":
-      return "👤";
-    case "code":
-      return "💻";
-    case "cpu":
-      return "⚙️";
-    case "briefcase":
-      return "💼";
-    case "award":
-      return "🏆";
-    case "brain":
-      return "🧠";
-    case "bookopen":
-      return "📖";
-    default:
-      return "📁";
-  }
 }

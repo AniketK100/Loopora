@@ -12,6 +12,7 @@ Loopora is an SEO-optimized interview preparation SaaS with a hand-drawn noteboo
 
 ## Key Folder Paths
 - `src/app/(public)/` — Public-facing pages (landing, folders library, dynamic categories, solutions view, `/suggest`, `/search`, `/profile`)
+- `src/app/(public)/interview/` — `InterviewWorkspace.tsx` (shared three-column workspace: Video / Answer / Navigator) + `workspace-data.ts` (server data loader). `VideoPlayerPanel.tsx` is a reusable player.
 - `src/app/(admin)/admin/` — Content management system (CMS) dashboard, audit logs, feature flags, bulk import
 - `src/app/api/` — API handlers (rate-limited auth, suggestions, bulk-import, flags)
 - `src/lib/db/` — Database connection singleton and schemas (User, Category, Question, FeatureFlag, AuditLog, Suggestion, Resume, ResumeAnalysis)
@@ -21,8 +22,8 @@ Loopora is an SEO-optimized interview preparation SaaS with a hand-drawn noteboo
 ## Public Routes
 - `/` — Cinematic landing page
 - `/interview` — Category/folder library
-- `/interview/[categorySlug]` — Questions in a category
-- `/interview/[categorySlug]/[questionSlug]` — Solution view with video player + AI answers
+- `/interview/[categorySlug]` — Three-column Interview Workspace for a folder (first question active)
+- `/interview/[categorySlug]/[questionSlug]` — Same Interview Workspace focused on one question (video player + tabbed answers + AI personalization + navigator)
 - `/search` — Full-text search
 - `/suggest` — Submit a question suggestion (POSTs to `/api/suggestions`)
 - `/privacy`, `/terms`, `/cookies` — Legal pages

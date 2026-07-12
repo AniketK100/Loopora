@@ -60,7 +60,14 @@ interviewloop/
 │   │   │
 │   │   ├── (public)/         # Public pages
 │   │   │   ├── cookies/      # Cookie policy
-│   │   │   ├── interview/    # Category + question pages
+│   │   │   ├── interview/    # Category + question pages (three-column workspace)
+│   │   │   │   ├── InterviewWorkspace.tsx        # Video / Answer / Navigator columns
+│   │   │   │   ├── workspace-data.ts              # Shared server data loader
+│   │   │   │   ├── [categorySlug]/
+│   │   │   │   │   ├── page.tsx                  # Folder view → InterviewWorkspace
+│   │   │   │   │   └── VideoPlayerPanel.tsx      # Reusable video player
+│   │   │   │   └── [categorySlug]/[questionSlug]/
+│   │   │   │       └── page.tsx                  # Solution view → InterviewWorkspace
 │   │   │   ├── landing/      # Landing page sections
 │   │   │   │   ├── components/ # Laptop, Monitor, etc.
 │   │   │   │   ├── CableSystem.tsx

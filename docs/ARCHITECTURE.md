@@ -66,6 +66,37 @@ src/
 - `/admin/security` — Security settings
 - `/admin/system` — System health
 
+## Interview Workspace (Three-Column Experience)
+
+The Interview Folder experience (`/interview/[categorySlug]` and `/interview/[categorySlug]/[questionSlug]`) is rendered by a single shared client component, `src/app/(public)/interview/InterviewWorkspace.tsx`, backed by the server loader `workspace-data.ts`.
+
+### Layout
+| Column | Width (xl) | Responsibility |
+|--------|-----------|----------------|
+| Video Workspace | ~30% | Multi-video player (presenter tabs), aspect-ratio-correct embed, Notes tab, Resources, Favorite/Practiced toggles |
+| Answer Workspace | ~45% | Tabs: Short Summary / Detailed / Personalized; internal scroll; collapsible suggest-edit console |
+| Question Navigator | ~25% | Search + difficulty filter + sticky scrollable list with status badges |
+
+### Architecture
+- **Single source of truth:** `getWorkspaceData(categorySlug, activeQuestionSlug?)` (server) fetches the category, the published question list (navigator), and the active question's full content (videos resolved via `getEmbedUrl` with `aspectRatio`) in one round-trip. Both routes feed the same `InterviewWorkspace`.
+- **No layout shift:** the 3-column grid structure is constant across question switches; only inner column content re-animates (Framer Motion `AnimatePresence`), so pages never jump.
+- **State preservation:** search/difficulty filters are initialized from `useSearchParams` and carried in every navigator `<Link>` href, so they survive question navigation and back/forward without a remount glitch.
+- **Keyboard nav:** `ArrowUp`/`ArrowDown` move between questions in the filtered navigator list.
+- **Responsive:** 3 columns ≥1280px; 2 columns + navigator drawer (1024–1279px); single column with a sticky question selector below 1024px.
+- **Premium gating:** `isPremium && !userHasPremium` locks the video, detailed answer, worked example and personalized answer.
+
+### Component Tree
+```
+InterviewWorkspace
+├── WorkspaceHeader                 # compact folder toolbar + "☰ Questions" (drawer trigger)
+├── VideoWorkspace                  # left column (keyed per question → resets player)
+│   └── FavoriteToggle / PracticedToggle
+├── AnswerWorkspace                 # center column (keyed per question → resets tab)
+│   ├── usePersonalizedAnswers       # AI personalized answers (context)
+│   └── SuggestEditForm              # /api/suggestions
+└── QuestionNavigator               # right column + slide-over drawer (<xl)
+```
+
 ## Authentication Flow
 
 1. NextAuth v5 handles credentials (email/password) and Google OAuth
@@ -104,8 +135,8 @@ src/
    - Results returned with `updatedAt` timestamp for cache status display
    - **No fallback to generic answer** — returns `null` on failure to prevent content duplication
 4. Answers stored in `PersonalizedAnswersContext` (React context) for shared access across components
-5. **Instant display**: Answers appear directly in accordion `CollapsibleSection` components within question cards — no page reload needed
-6. **Auto-load on mount**: `CategoryQuestionsContainer` lazy-loads cached answers via context when user navigates to a folder
+5. **Instant display**: Answers appear in the 🎯 Personalized tab of the Answer Workspace — no page reload needed
+6. **Auto-load on mount**: `InterviewWorkspace` lazy-loads cached answers via `usePersonalizedAnswers` when a user navigates to a folder
 7. **Resume reactivity**: Context clears and regenerates when active resume changes or is deleted
 
 ## Landing Page Component Tree

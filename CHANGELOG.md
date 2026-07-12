@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.3.0] - 2026-07-12 — Interview Folder Experience redesign (three-column workspace)
+
+### Added
+- **Three-column Interview Workspace** — Replaced the stacked accordion + single-question layout with a production-grade, desktop-first workspace rendered by a single shared `InterviewWorkspace` component on both the category and question-detail routes:
+  - **Left (~30%) Video Workspace** — question context + Favorite/Practiced toggles, a multi-video player with presenter tabs, an aspect-ratio-correct embed (`never cropped`), and a "Notes" tab for study notes. Inline `Resources` list below.
+  - **Center (~45%) Answer Workspace** — always-visible tabs (🔑 Short Summary / 💡 Detailed / 🎯 Personalized) with an internal scroll region, plus a collapsible "Improve this solution / suggest edit" console.
+  - **Right (~25%) Question Navigator** — search box + difficulty filter (All/Easy/Medium/Hard), a sticky scrollable question list showing difficulty/video/premium/favorite/practiced status, the active question auto-scrolled into view.
+- **Compact toolbar header** — folder icon, name and item count in one row; the active question title is shown beneath on smaller screens. A "☰ Questions" button opens the navigator on viewports below `xl`.
+- **Responsive behavior** — 3 columns at `xl` (≥1280px); 2 columns (Video + Answer) with the navigator in a slide-over drawer at `lg` (1024–1279px); single column with a sticky question selector on tablet/phone.
+- **Framer Motion transitions** — content cross-fades on question/tab change (no layout shift; no CLS). Navigator drawer slides via `AnimatePresence`.
+- **Keyboard navigation** — `ArrowUp` / `ArrowDown` (when not typing in an input) move between questions in the filtered navigator list.
+- **No layout shift on question switch** — the three-column grid structure is constant; only the inner column content updates/re-animates, so the page never jumps.
+- **Shared data loader** `src/app/(public)/interview/workspace-data.ts` fetches the category, the published question list (navigator), and the active question's full content (SSR/SEO) in a single round-trip and is the single source of truth for both routes.
+- **SEO preserved** — each question keeps its own URL (`/interview/[category]/[question]`) with canonical metadata; the category page keeps its FAQPage JSON-LD and breadcrumb. The category page opens directly into the first published question.
+
+### Changed
+- Premium paywall now gates the video player, detailed answer, worked example and personalized answer (previously only partially gated).
+- Personalized (AI) answers are surfaced in a dedicated Answer Workspace tab instead of an accordion panel, sourced from `usePersonalizedAnswers`.
+- Suggest-edit feedback console moved into the Answer Workspace (collapsible) instead of a separate full-width card.
+
+### Removed
+- Obsolete accordion-based components `CategoryQuestionsContainer`, `AccordionAnswerContent` and `QuestionDetailContainer` have been replaced by `InterviewWorkspace` + `workspace-data.ts`. The reusable `VideoPlayerPanel` remains available.
+
+### Performance / A11y
+- Per-column internal scrolling (`overflow-y-auto`) on `xl` keeps the heavy page chrome (sticky header/footer) stable.
+- Question links are prefetched (Next `<Link>` default) for instant navigation; `aria-current`, `role="dialog"` on the drawer, and visible focus states included.
+
 ## [2.2.2] - 2026-07-12 — Repair video persistence pipeline (silent client-side drop)
 
 ### Fixed

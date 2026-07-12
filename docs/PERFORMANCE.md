@@ -37,4 +37,4 @@
 ## React Rendering
 
 - **Server components**: All data fetching done server-side in App Router
-- **Client components**: Minimized to interactive elements only (accordions, toggles, forms)
+- **Client components**: Minimized to interactive elements only (workspace tabs, toggles, forms, drawer)

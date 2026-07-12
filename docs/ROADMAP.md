@@ -25,6 +25,7 @@
 - [x] Design system with hand-drawn aesthetic
 - [x] Responsive design
 - [x] Accessibility (WCAG 2.1 AA)
+- [x] Three-column Interview Workspace (Video / Answer / Navigator) with no layout shift, responsive drawer, and keyboard nav
 
 ## Short-term
 

@@ -100,10 +100,10 @@ User selects 2 folders
     → Store PersonalizedAnswer document
     → No fallback to generic answer — return null on failure
   → Results stored in PersonalizedAnswersContext (React Context)
-  → Answers appear immediately in question card accordion
+  → Answers appear immediately in the Answer Workspace 🎯 Personalized tab
 
 User browses questions in folder
-  → CategoryQuestionsContainer reads from PersonalizedAnswersContext
+  → InterviewWorkspace reads from PersonalizedAnswersContext via usePersonalizedAnswers
   → Each question shows personalized answer in collapsible section with:
     - Green badge "Based on your uploaded resume"
     - Resume filename
