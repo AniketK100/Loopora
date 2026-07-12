@@ -48,6 +48,7 @@ interface VideoRow {
   status: string; // Live parsed provider status
   embedUrl: string | null;
   embedKind: "iframe" | "video" | null;
+  aspectRatio?: string; // Suggested CSS aspect-ratio for the preview box
 }
 
 export function QuestionForm({ categories, initialData }: QuestionFormProps) {
@@ -79,6 +80,7 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
       status: parsed.status,
       embedUrl: parsed.embedUrl,
       embedKind: parsed.embedKind,
+      aspectRatio: parsed.aspectRatio,
     };
   });
   const [videos, setVideos] = useState<VideoRow[]>(initialVideos);
@@ -87,9 +89,14 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   // Parse pasted video URLs on the fly for live provider feedback.
-  function resolveVideoRow(url: string): Pick<VideoRow, "status" | "embedUrl" | "embedKind"> {
+  function resolveVideoRow(url: string): Pick<VideoRow, "status" | "embedUrl" | "embedKind" | "aspectRatio"> {
     const parsed = parseVideoUrl(url);
-    return { status: parsed.status, embedUrl: parsed.embedUrl, embedKind: parsed.embedKind };
+    return {
+      status: parsed.status,
+      embedUrl: parsed.embedUrl,
+      embedKind: parsed.embedKind,
+      aspectRatio: parsed.aspectRatio,
+    };
   }
 
   // Handle live slug generation
@@ -137,6 +144,7 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
           updated.status = resolved.status;
           updated.embedUrl = resolved.embedUrl;
           updated.embedKind = resolved.embedKind;
+          updated.aspectRatio = resolved.aspectRatio;
         }
         return updated;
       })
@@ -447,7 +455,10 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
                       <p className="text-xs font-semibold text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] mb-2">
                         Preview
                       </p>
-                      <div className="aspect-video w-full max-w-md overflow-hidden rounded-lg border-2 border-[var(--color-border)] bg-black/5">
+                      <div
+                        className="w-full max-w-md overflow-hidden rounded-lg border-2 border-[var(--color-border)] bg-black/5"
+                        style={{ aspectRatio: vid.aspectRatio || "16 / 9" }}
+                      >
                         {vid.embedKind === "iframe" ? (
                           <iframe
                             src={vid.embedUrl}
@@ -457,7 +468,11 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
                             allowFullScreen
                           />
                         ) : (
-                          <video src={vid.embedUrl} controls className="h-full w-full" />
+                          <video
+                            src={vid.embedUrl}
+                            controls
+                            className="h-full w-full object-contain"
+                          />
                         )}
                       </div>
                     </div>

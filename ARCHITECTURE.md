@@ -19,7 +19,7 @@
 | Database | MongoDB Atlas + Mongoose | Document model fits Q&A nesting; team familiarity |
 | Auth | NextAuth.js v5 (Credentials + Google OAuth) | JWT sessions, HttpOnly cookies, RBAC middleware |
 | AI | Google Gemini (via @google/genai) | Resume analysis + personalized answer generation |
-| Video | External embeds only (YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/Reels/TV, direct MP4/WebM/OGG + Cloudinary) | Zero storage cost; parsed by a declarative `parseVideoUrl` registry (`src/lib/video`) and lazy-loaded iframes for performance |
+| Video | External embeds only (YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/Reels/reels/TV, direct MP4/WebM/OGG + Cloudinary) | Zero storage cost; parsed by a declarative `parseVideoUrl` registry (`src/lib/video`) and lazy-loaded iframes for performance. Single source of truth shared by `normalizeVideoUrl` (`src/lib/embed`) used in API persistence and `getEmbedUrl` used by renderers; each platform exposes an `aspectRatio` so players size correctly (9:16 / 1:1 / 16:9). |
 | Images | Cloudinary + next/image | CDN-optimized thumbnails and OG images |
 | Motion | GSAP + Lenis (landing), Framer Motion (admin UI) | Scroll-triggered animations, smooth scrolling |
 | Validation | Zod | Schema validation on all API routes |

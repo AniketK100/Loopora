@@ -23,6 +23,7 @@ interface VideoData {
   label: string;
   url: string;
   order: number;
+  embedUrl?: string;
 }
 
 interface QuestionData {
@@ -173,7 +174,7 @@ export function QuestionDetailContainer({
     }
   };
 
-  const embedInfo = selectedVideo ? getEmbedUrl(selectedVideo.url) : null;
+  const embedInfo = selectedVideo ? getEmbedUrl(selectedVideo.url, selectedVideo.embedUrl) : null;
   const difficultyBadgeVariant = `difficulty-${question.difficulty}` as
     | "difficulty-easy"
     | "difficulty-medium"
@@ -341,7 +342,11 @@ export function QuestionDetailContainer({
                 </div>
 
                 {/* Embedded Player Card */}
-                <Card decoration="none" className="overflow-hidden bg-black aspect-video relative flex items-center justify-center border-2 border-[var(--color-border)] wobbly-sm">
+                <Card
+                  decoration="none"
+                  className="overflow-hidden bg-black relative flex items-center justify-center border-2 border-[var(--color-border)] wobbly-sm"
+                  style={{ aspectRatio: embedInfo?.aspectRatio || "16 / 9" }}
+                >
                   {embedInfo?.type === "iframe" && (
                     <iframe
                       src={embedInfo.src}

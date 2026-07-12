@@ -13,6 +13,7 @@ interface VideoData {
   url: string;
   provider: string;
   order: number;
+  embedUrl?: string;
 }
 
 interface PersonalizedAnswer {
@@ -83,6 +84,7 @@ export function CategoryQuestionsContainer({
     url: v.url,
     title: v.label,
     provider: v.provider,
+    embedUrl: v.embedUrl,
   })) || [];
 
   const accordionItems = filteredQuestions.map((q) => {

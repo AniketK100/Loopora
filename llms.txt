@@ -15,7 +15,7 @@ Loopora is an SEO-optimized interview preparation SaaS with a hand-drawn noteboo
 - `src/app/(admin)/admin/` — Content management system (CMS) dashboard, audit logs, feature flags, bulk import
 - `src/app/api/` — API handlers (rate-limited auth, suggestions, bulk-import, flags)
 - `src/lib/db/` — Database connection singleton and schemas (User, Category, Question, FeatureFlag, AuditLog, Suggestion, Resume, ResumeAnalysis)
-- `src/lib/video/` — `parseVideoUrl` declarative video URL parser (platform registry: YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/Reels/TV, direct files) with `getEmbedUrl` wrapper
+- `src/lib/video/` — `parseVideoUrl` declarative video URL parser (platform registry: YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/Reels/reels/TV, direct files; each platform exposes `aspectRatio`) with `getEmbedUrl` wrapper. `src/lib/embed/normalize.ts` (`normalizeVideoUrl`) reuses the parser for API persistence.
 - `src/components/ui/` — Wobbly hand-drawn aesthetic base components (Button, Card, Input, Accordion, Skeleton, Select, Toggle)
 
 ## Public Routes

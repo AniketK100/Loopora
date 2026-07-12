@@ -18,6 +18,7 @@ interface Video {
   url: string;
   title?: string;
   provider?: string;
+  embedUrl?: string;
 }
 
 interface VideoPlayerPanelProps {
@@ -51,7 +52,7 @@ export function VideoPlayerPanel({
     return videos
       .map((video) => {
         try {
-          const resolved: ResolvedEmbed = getEmbedUrl(video.url);
+          const resolved: ResolvedEmbed = getEmbedUrl(video.url, video.embedUrl);
           return {
             ...video,
             resolved,
@@ -115,7 +116,10 @@ export function VideoPlayerPanel({
                 </div>
               </div>
             ) : (
-              <div className="aspect-video bg-black">
+              <div
+                className="bg-black"
+                style={{ aspectRatio: currentVideo?.resolved.aspectRatio || "16 / 9" }}
+              >
                 {currentVideo?.resolved.type === "iframe" ? (
                   <iframe
                     src={currentVideo.resolved.src}

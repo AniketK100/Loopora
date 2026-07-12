@@ -20,6 +20,7 @@ export type VideoPlatformId =
   | "google-drive"
   | "instagram-post"
   | "instagram-reel"
+  | "instagram-reels"
   | "instagram-tv"
   | "direct";
 
@@ -38,6 +39,11 @@ export interface VideoPlatform {
     kind: VideoEmbedKind;
     embedUrl: string;
   } | null;
+  /**
+   * Suggested CSS `aspect-ratio` for the player container so portrait / square
+   * / landscape media is never stretched into the wrong shape.
+   */
+  aspectRatio?: string;
 }
 
 export interface ParsedVideo {
@@ -50,6 +56,8 @@ export interface ParsedVideo {
   /** Embed source for an iframe / <video> element, or null when unsupported. */
   embedUrl: string | null;
   embedKind: VideoEmbedKind | null;
+  /** Suggested CSS `aspect-ratio` for the player container (e.g. "9 / 16"). */
+  aspectRatio?: string;
   /** Human readable status used by the admin UI ("Detected: …"). */
   status: string;
   /** Error message when the URL could not be parsed. */
@@ -74,10 +82,14 @@ function normalize(raw: string): string | null {
   }
 }
 
+// Instagram host prefix: supports www., m. (mobile), ig. and bare instagram.com.
+const IG_PREFIX = /(?:www\.|m\.|ig\.)?instagram\.com/i;
+
 const PLATFORMS: VideoPlatform[] = [
   {
     id: "youtube",
     name: "YouTube",
+    aspectRatio: "16 / 9",
     patterns: [
       /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i,
       /youtube\.com\/watch\?.*\bv=([a-zA-Z0-9_-]{11})/i,
@@ -90,6 +102,7 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "youtube-shorts",
     name: "YouTube Shorts",
+    aspectRatio: "9 / 16",
     patterns: [/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i],
     buildEmbed: (match) => ({
       kind: "iframe",
@@ -99,6 +112,7 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "vimeo",
     name: "Vimeo",
+    aspectRatio: "16 / 9",
     patterns: [
       /vimeo\.com\/(\d+)/i,
       /player\.vimeo\.com\/video\/(\d+)/i,
@@ -111,6 +125,7 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "loom",
     name: "Loom",
+    aspectRatio: "16 / 9",
     patterns: [
       /loom\.com\/share\/([a-zA-Z0-9]+)/i,
       /loom\.com\/embed\/([a-zA-Z0-9]+)/i,
@@ -123,6 +138,7 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "google-drive",
     name: "Google Drive",
+    aspectRatio: "16 / 9",
     patterns: [
       /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i,
       /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/i,
@@ -135,7 +151,8 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "instagram-post",
     name: "Instagram Post",
-    patterns: [/instagram\.com\/p\/([a-zA-Z0-9_-]+)/i],
+    aspectRatio: "1 / 1",
+    patterns: [/instagram\.com\/p\/([a-zA-Z0-9_-]+)/i, new RegExp(`${IG_PREFIX.source}\\/p\\/([a-zA-Z0-9_-]+)`, "i")],
     buildEmbed: (match) => ({
       kind: "iframe",
       embedUrl: `https://www.instagram.com/p/${match[1]}/embed`,
@@ -144,7 +161,18 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "instagram-reel",
     name: "Instagram Reel",
-    patterns: [/instagram\.com\/reel\/([a-zA-Z0-9_-]+)/i],
+    aspectRatio: "9 / 16",
+    patterns: [/instagram\.com\/reel\/([a-zA-Z0-9_-]+)/i, new RegExp(`${IG_PREFIX.source}\\/reel\\/([a-zA-Z0-9_-]+)`, "i")],
+    buildEmbed: (match) => ({
+      kind: "iframe",
+      embedUrl: `https://www.instagram.com/reel/${match[1]}/embed`,
+    }),
+  },
+  {
+    id: "instagram-reels",
+    name: "Instagram Reels",
+    aspectRatio: "9 / 16",
+    patterns: [new RegExp(`${IG_PREFIX.source}\\/reels\\/([a-zA-Z0-9_-]+)`, "i")],
     buildEmbed: (match) => ({
       kind: "iframe",
       embedUrl: `https://www.instagram.com/reel/${match[1]}/embed`,
@@ -153,7 +181,8 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "instagram-tv",
     name: "Instagram TV",
-    patterns: [/instagram\.com\/tv\/([a-zA-Z0-9_-]+)/i],
+    aspectRatio: "9 / 16",
+    patterns: [/instagram\.com\/tv\/([a-zA-Z0-9_-]+)/i, new RegExp(`${IG_PREFIX.source}\\/tv\\/([a-zA-Z0-9_-]+)`, "i")],
     buildEmbed: (match) => ({
       kind: "iframe",
       embedUrl: `https://www.instagram.com/tv/${match[1]}/embed`,
@@ -162,6 +191,7 @@ const PLATFORMS: VideoPlatform[] = [
   {
     id: "direct",
     name: "Direct Video",
+    aspectRatio: "16 / 9",
     patterns: [/\.(mp4|webm|ogg)(?:\?.*)?$/i],
     buildEmbed: (_match, normalized) => ({
       kind: "video",
@@ -186,6 +216,7 @@ export function parseVideoUrl(raw: string): ParsedVideo {
       normalizedUrl: null,
       embedUrl: null,
       embedKind: null,
+      aspectRatio: undefined,
       status: "Unsupported URL format ❌",
       error: "Enter a valid, fully-qualified video URL.",
     };
@@ -203,6 +234,7 @@ export function parseVideoUrl(raw: string): ParsedVideo {
       normalizedUrl: normalized,
       embedUrl: normalized,
       embedKind: "video",
+      aspectRatio: "16 / 9",
       status: "Direct Video (Cloudinary) ✅",
       error: null,
     };
@@ -221,6 +253,7 @@ export function parseVideoUrl(raw: string): ParsedVideo {
             normalizedUrl: normalized,
             embedUrl: embed.embedUrl,
             embedKind: embed.kind,
+            aspectRatio: platform.aspectRatio,
             status: `${platform.name} ✅`,
             error: null,
           };
@@ -229,15 +262,16 @@ export function parseVideoUrl(raw: string): ParsedVideo {
     }
   }
 
-  return {
-    ok: false,
-    platform: null,
-    platformName: "",
-    normalizedUrl: normalized,
-    embedUrl: null,
-    embedKind: null,
-    status: "Unsupported URL format ❌",
-    error:
-      "This URL is not from a supported platform (YouTube, Vimeo, Loom, Google Drive, Instagram or a direct video file).",
-  };
+    return {
+      ok: false,
+      platform: null,
+      platformName: "",
+      normalizedUrl: normalized,
+      embedUrl: null,
+      embedKind: null,
+      aspectRatio: undefined,
+      status: "Unsupported URL format ❌",
+      error:
+        "This URL is not from a supported platform (YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/reels/tv or a direct video file).",
+    };
 }

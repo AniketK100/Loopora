@@ -70,7 +70,7 @@ Loopora is a **production-grade interview preparation SaaS** that helps candidat
 |---|---|
 | **Question Library** | 500+ curated questions across 8 interview categories with frequency rankings |
 | **Model Answers** | Structured written responses with short summaries, detailed answers, and STAR examples |
-| **Video Learning** | Multiple video sources per question (YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/Reels/TV, direct MP4/WebM/OGG + Cloudinary) with inline switching and live preview |
+| **Video Learning** | Multiple video sources per question (YouTube, YouTube Shorts, Vimeo, Loom, Google Drive, Instagram posts/Reels/reels/TV, direct MP4/WebM/OGG + Cloudinary) with inline switching, live preview and responsive aspect-ratio players (9:16 / 1:1 / 16:9) |
 | **Full-Text Search** | MongoDB-powered search across questions, answers, and tags |
 | **Suggest Q&A** | Public `/suggest` page lets visitors submit question suggestions and feedback to `/api/suggestions` |
 | **Deep Linking** | Every question has a unique, shareable URL |

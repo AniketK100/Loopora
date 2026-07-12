@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.1] - 2026-07-12 — Video persistence & platform coverage fix
+
+### Fixed
+- **Instagram `/reels/` (plural) now parses** — previously returned "Unsupported URL Format". Added an `instagram-reels` platform entry so both `/reel/` (singular) and `/reels/` (plural) are accepted.
+- **Subdomain-agnostic Instagram detection** — `www.instagram.com`, `m.instagram.com`, `ig.instagram.com` and bare `instagram.com` are all handled.
+- **End-to-end video persistence** — `normalizeVideoUrl` (used by `POST`/`PATCH /api/questions`) now delegates to the declarative `parseVideoUrl` registry instead of a duplicated, divergent regex set. This guarantees the stored `embedUrl` matches the client preview/resolvers, fixes Instagram Reels/TV embeds (previously forced to the `/p/` post path), and removes the 500 error that aborted the entire save when a `/reels/` URL was submitted.
+- **Responsive aspect-ratio previews** — admin form preview, the public `QuestionDetailContainer` player and `VideoPlayerPanel` now size embeds with a real CSS `aspect-ratio` (Reels/IGTV/Shorts 9:16, posts 1:1, YouTube/Vimeo/Loom/Drive 16:9) via `parseVideoUrl`'s `aspectRatio` field, so portrait media is never stretched into a letterboxed landscape box.
+- **Renderers use the stored, server-validated `embedUrl`** — `getEmbedUrl(url, storedEmbedUrl)` prefers the persisted embed and falls back to live parsing. Public question pages now pass the stored `embedUrl` through to the player.
+
+### Added
+- **`aspectRatio` metadata** on `ParsedVideo` / `ResolvedEmbed` returned by `parseVideoUrl` / `getEmbedUrl`.
+
 ## [2.2.0] - 2026-07-12 — Final UX, Performance, Responsive & Documentation Polish
 
 ### Added

@@ -106,6 +106,7 @@ export default async function QuestionDetailPage({ params }: QuestionDetailPageP
       label: v.label,
       url: v.url,
       order: v.order,
+      embedUrl: (v as { embedUrl?: string }).embedUrl,
     })),
     difficulty: questionDoc.difficulty,
     frequencyRank: questionDoc.frequencyRank,
