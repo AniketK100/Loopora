@@ -47,6 +47,15 @@ const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+// Constant dummy bcrypt hash used to equalize response timing when a user does
+// not exist. This prevents email enumeration via timing side-channels (OWASP
+// A07 / CWE-203): an attacker measuring response time can no longer distinguish
+// "email exists, wrong password" from "email does not exist".
+// Generated with bcryptjs cost 10 for the literal string "loopora-dummy-hash";
+// it is never compared for equality, only fed to bcrypt.compare() for timing.
+const DUMMY_HASH =
+  "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZd9qJ8i4S";
+
 /**
  * Parses user agent string to identify OS and browser.
  */
@@ -111,13 +120,16 @@ const providers: Provider[] = [
 
       // 2. Query user by email
       const user = await User.findOne({ email: email.toLowerCase() });
-      if (!user || !user.passwordHash) {
-        return null;
-      }
 
-      // 3. Verify password hash using bcrypt
-      const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-      if (!passwordMatch) {
+      // 3. Verify password hash using bcrypt.
+      // Always run bcrypt.compare — against the real hash when the user exists,
+      // otherwise against a constant dummy hash — so response timing is identical
+      // for unknown emails vs. wrong passwords (mitigates user enumeration).
+      const passwordMatch = await bcrypt.compare(
+        password,
+        user?.passwordHash || DUMMY_HASH
+      );
+      if (!user || !user.passwordHash || !passwordMatch) {
         return null;
       }
 

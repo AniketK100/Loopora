@@ -101,9 +101,9 @@ export function StationBookmarks({ progress, reducedMotion }: StationBookmarksPr
                   })}
                 </div>
 
-                {/* Right: Progress dashboard */}
+                {/* Right: Progress dashboard — rebuilt with CSS Grid, no overlap, zoom-safe */}
                 <div
-                  className={`flex-[2] p-[18px] bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg border border-amber-200/60 transition-all duration-700 ${
+                  className={`flex-[2] min-w-0 p-5 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl border border-amber-200/60 transition-all duration-700 ${
               showProgress ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
             }`}
                 >
@@ -114,8 +114,9 @@ export function StationBookmarks({ progress, reducedMotion }: StationBookmarksPr
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="relative w-[55px] h-[55px] shrink-0">
+                  {/* Centered circular progress — never overlaps the metric grid */}
+                  <div className="flex justify-center mb-4">
+                    <div className="relative shrink-0" style={{ width: 84, height: 84 }}>
                       <svg viewBox="0 0 48 48" className="w-full h-full -rotate-90">
                         <defs>
                           <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -134,35 +135,38 @@ export function StationBookmarks({ progress, reducedMotion }: StationBookmarksPr
                           }}
                         />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-sm font-black text-neutral-800">
+                      <span className="absolute inset-0 flex items-center justify-center text-lg font-black tabular-nums text-neutral-800">
                         {showProgress ? "70%" : "0%"}
                       </span>
                     </div>
-
-                    <div className="grid grid-cols-3 gap-3 flex-1">
-                      <div className="text-center">
-                        <div className="text-lg font-black text-neutral-800 leading-none">24</div>
-                        <div className="text-[0.6rem] text-neutral-500 uppercase tracking-wider font-bold">Saved</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-black text-neutral-800 leading-none">12</div>
-                        <div className="text-[0.6rem] text-neutral-500 uppercase tracking-wider font-bold">Topics</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-black text-neutral-800 leading-none">5d</div>
-                        <div className="text-[0.6rem] text-neutral-500 uppercase tracking-wider font-bold">Streak</div>
-                      </div>
-                    </div>
                   </div>
+
+                  {/* Metric grid — each cell min-w-0 so labels never collide at 200% zoom */}
+                  <dl className="grid grid-cols-3 gap-2 mb-4">
+                    {[
+                      { v: "24", l: "Saved" },
+                      { v: "12", l: "Topics" },
+                      { v: "5d", l: "Streak" },
+                    ].map((m) => (
+                      <div key={m.l} className="min-w-0 text-center px-1">
+                        <div className="text-lg font-black tabular-nums leading-none text-neutral-800 truncate">
+                          {m.v}
+                        </div>
+                        <div className="mt-1 text-[0.6rem] text-neutral-500 uppercase tracking-wider font-bold whitespace-nowrap">
+                          {m.l}
+                        </div>
+                      </div>
+                    ))}
+                  </dl>
 
                   <div className="space-y-3 pt-4 border-t border-amber-200/40">
                     {BOOKMARK_ITEMS.slice(0, 2).map((item, i) => {
                       const pct = item.category === "System Design" ? 85 : 60;
                       return (
                         <div key={item.category}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[0.55rem] font-bold text-neutral-600">{item.category}</span>
-                            <span className="text-[0.55rem] font-bold text-neutral-500">{pct}%</span>
+                          <div className="flex items-center justify-between mb-1 gap-2">
+                            <span className="text-[0.55rem] font-bold text-neutral-600 truncate">{item.category}</span>
+                            <span className="text-[0.55rem] font-bold text-neutral-500 tabular-nums shrink-0">{pct}%</span>
                           </div>
                            <div className="h-[10px] bg-neutral-200/70 rounded-full overflow-hidden">
                             <div

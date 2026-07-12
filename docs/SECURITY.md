@@ -6,7 +6,9 @@
 - **Providers:** Email/password (credentials) + Google OAuth (optional)
 - **Password hashing:** bcryptjs with salt rounds
 - **Session expiry:** 30 days, with tracking in `Session` collection
-- **Edge middleware** protects all `/admin` routes via `authorized` callback
+- **Edge middleware** protects all `/admin` **and `/api/admin`** routes via the `authorized` callback (defense-in-depth; API routes also call `requireRole()`)
+- **Anti-enumeration:** the credentials `authorize()` flow always runs a `bcrypt.compare()` against a constant dummy hash when the email is unknown, so response timing is identical for non-existent vs. wrong-password accounts (mitigates OWASP A07 / CWE-203 user enumeration via timing)
+- **Open-redirect guard:** `callbackUrl` from `?callbackUrl=` is validated to be a same-origin relative path (`/...`, rejecting `//evil.com` and absolute URLs) before use in `window.location.href` on the login page
 - **Rate limiting:** IP-based on auth endpoints (configurable via `RATE_LIMIT_AUTH_MAX`)
 
 ## Authorization (RBAC)

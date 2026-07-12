@@ -120,6 +120,10 @@ QuestionSchema.index({
   tags: "text",
 });
 
+// 3. Covering index for the published navigator + personalized queries,
+//    sorted by frequencyRank (used by /interview and /api/interview/[folder]/personalized).
+QuestionSchema.index({ category: 1, isPublished: 1, frequencyRank: -1 });
+
 // --- Denormalization Hooks ---------------------------------------------------
 /**
  * Recalculates and updates the question count on the parent category.

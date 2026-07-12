@@ -221,11 +221,15 @@ export function LandingHero({
   return (
     <section
       ref={heroRef}
-      className={`landing-hero relative w-full min-h-[90vh] flex flex-col md:flex-row items-center justify-between px-6 md:px-16 py-12 bg-gradient-to-b from-[#110f0d] to-[#151310] ${
+      className={`landing-hero relative w-full min-h-[100svh] flex items-center bg-gradient-to-b from-[#110f0d] to-[#151310] ${
         poweredOn ? "powered-on" : ""
       }`}
       aria-labelledby="landing-title"
     >
+      {/* Desk surface backdrop layer — full bleed */}
+      <div className="desk-surface absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(28,24,20,0.15)_0%,_transparent_70%)] pointer-events-none" />
+
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-16 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-14 md:gap-10">
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes float-slow {
           0%, 100% { transform: translateY(0px) rotate(2deg); }
@@ -249,9 +253,6 @@ export function LandingHero({
           animation: float-fast 5s ease-in-out infinite;
         }
       `}} />
-
-      {/* Desk surface backdrop layer */}
-      <div className="desk-surface absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(28,24,20,0.15)_0%,_transparent_70%)] pointer-events-none" />
 
       {/* LEFT COLUMN: Main title & Hacker typing terminal */}
       <div className="flex-1 max-w-xl space-y-6 z-10 text-left">
@@ -303,6 +304,22 @@ export function LandingHero({
           >
             {isAuthenticated ? "Resume Preparation" : "Sign up free"}
           </Link>
+        </div>
+
+        {/* Trust strip — fills the hero and reinforces credibility */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[#8a7d68] text-xs font-mono">
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 size={13} className="text-[#d4a052]" />
+            {totalQuestions}+ curated questions
+          </span>
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 size={13} className="text-[#d4a052]" />
+            {totalCategories} tracks
+          </span>
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 size={13} className="text-[#d4a052]" />
+            Free &amp; Premium plans
+          </span>
         </div>
       </div>
 
@@ -397,6 +414,7 @@ export function LandingHero({
           </div>
 
         </div>
+      </div>
       </div>
 
     </section>

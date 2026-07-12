@@ -18,15 +18,21 @@ import posthog from "posthog-js";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get redirect URL from search parameters or fallback to home page
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  // Get redirect URL from search parameters or fallback to home page.
+  // Guard against open-redirect: only allow same-origin relative paths
+  // (reject absolute URLs and protocol-relative "//evil.com" links).
+  const rawCallback = searchParams.get("callbackUrl") || "/";
+  const callbackUrl =
+    rawCallback.startsWith("/") && !rawCallback.startsWith("//")
+      ? rawCallback
+      : "/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

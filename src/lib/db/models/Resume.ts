@@ -98,5 +98,8 @@ ResumeSchema.index({ user: 1, contentHash: 1 }, { unique: true });
 // Compound index for active resume lookups
 ResumeSchema.index({ user: 1, isActive: 1 });
 
+// Compound index for the per-user resume-count query (upload limit enforcement)
+ResumeSchema.index({ user: 1, status: 1 });
+
 export const Resume: Model<IResumeDocument> =
   mongoose.models.Resume || mongoose.model<IResumeDocument>("Resume", ResumeSchema);

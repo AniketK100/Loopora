@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.6.0] - 2026-07-12 — Production audit: security hardening, perf indexes, landing & progress-card fixes
+
+### Security
+- **Anti user-enumeration (timing)** — credentials `authorize()` now always runs `bcrypt.compare()` against a constant dummy hash when the email is unknown, equalizing response timing (OWASP A07 / CWE-203).
+- **Open-redirect fix** — login `callbackUrl` is validated to a same-origin relative path before `window.location.href` navigation (rejects `//evil.com` and absolute URLs).
+- **Middleware hardening** — edge `authorized` callback now also gates `/api/admin/*` (defense-in-depth alongside per-route `requireRole()`).
+
+### Performance
+- **MongoDB indexes** — added `{ category: 1, isPublished: 1, frequencyRank: -1 }` covering index on `Question` (workspace navigator + personalized queries); added `{ user: 1, status: 1 }` index on `Resume` (upload-limit count query).
+
+### UI / UX
+- **Landing hero** — wrapped into a centered `max-w-[1440px]` container with `100svh` min-height, added a credibility/trust strip under the CTAs; full-bleed desk-surface backdrop. Fills large monitors without dead space.
+- **Bookmarks progress card (landing "Knowledge Hub")** — rebuilt with a centered large circular progress ring + a CSS-Grid metric row (`min-w-0`, `tabular-nums`, `whitespace-nowrap` labels) so `Saved / Topics / Streak` never overlap at 100%–200% browser zoom.
+
 ## [2.5.0] - 2026-07-12 — Workspace header redesign, density & reading experience
 
 ### Changed (Interview Workspace)
