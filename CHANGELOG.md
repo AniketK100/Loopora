@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.5.0] - 2026-07-12 — Workspace header redesign, density & reading experience
+
+### Changed (Interview Workspace)
+- **Cohesive workspace header** — replaced the disconnected label/pills row with one aligned toolbar: `← Library` back link + folder icon + name + question count + top-tags subtitle on the left; centered difficulty-distribution pills (🟢/🟡/🔴 counts) and a resume-status pill (`✅ Resume Loaded` / `📄 No Resume`) divided by a border; search box + difficulty filter on the right. Single baseline, ~110px max.
+- **Full-width layout** — outer wrapper widened (`max-w-[1800px]`, tighter padding) to use more viewport width; columns rebalanced to **30% / 40% / 30%** (Video / Answer / Navigator).
+- **Denser question list** — `React.memo` cards now show difficulty badge, title, priority `#`, video count, a 🎯 personalized indicator (when a resume-personalized answer exists), plus favorite/practiced marks; tighter spacing, hover lift, accent active state.
+- **Reading workspace (Answer panel)** — optimal line length (`max-w-prose`), plus **Copy** and **Share** actions in the tab bar (clipboard / `navigator.share`).
+- **Video tabs** — presenter tabs sit above the player, scroll horizontally when many, keep resolved aspect-ratio (16:9 / 9:16 / 1:1) and never crop.
+- **Top tags** — derived from the most frequent question tags across the folder and shown as the header subtitle for at-a-glance topic context.
+
+### Performance
+- **Field projection in `workspace-data.ts`** — the navigator list now queries only `slug, question, difficulty, isPremium, tags, frequencyRank, videos`; the active question is fetched separately, in full. Large `answer.detailed` HTML is no longer serialized for every question in the folder (cuts payload for big folders).
+- `personalizedSlugs` computed once from `usePersonalizedAnswers` and passed to the list (no per-card hook calls).
+
+### SEO
+- **OpenGraph + Twitter cards** added to both interview routes' `generateMetadata` (article/website type, title, description, canonical URL).
+
+### Accessibility
+- Header, list and tabs carry `role`/`aria-*`; `prefers-reduced-motion` disables Framer transitions; global `:focus-visible` ring retained.
+
 ## [2.4.0] - 2026-07-12 — Final production polish (Interview Workspace refinements)
 
 ### Changed (Interview Workspace)

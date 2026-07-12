@@ -9,6 +9,7 @@
 ## Data Fetching
 
 - **Light projections**: List endpoints (`GET /api/questions`, `GET /api/search`) exclude `answer.detailed` and `videos` arrays
+- **Workspace projection**: `getWorkspaceData` queries the navigator list with `.select("slug question difficulty isPremium tags frequencyRank videos")` and fetches the active question separately, in full — large `answer.detailed` HTML is never serialized for the whole folder
 - **Pagination**: Every list endpoint supports `?page=` and `?limit=` with configurable page sizes (max 100)
 - **ISR**: Sitemap regenerated hourly (`revalidate = 3600`)
 

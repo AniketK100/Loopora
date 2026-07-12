@@ -74,18 +74,19 @@ The Interview Folder experience (`/interview/[categorySlug]` and `/interview/[ca
 | Column | Width (lg+) | Responsibility |
 |--------|-----------|----------------|
 | Video Workspace | 30% | Browser-style presenter tabs (platform icons) above a flush, aspect-ratio-correct player; Notes tab; Resources; Favorite/Practiced toggles |
-| Answer Workspace | 42% | Tabs: Short Summary / Detailed / Personalized; internal scroll; collapsible suggest-edit console |
-| Question Navigator | 28% | Dense, animated question list with status badges (search/filter live in the toolbar) |
+| Answer Workspace | 40% | Tabs: Short Summary / Detailed / Personalized; Copy + Share actions; `max-w-prose` reading line length; internal scroll |
+| Question Navigator | 30% | Dense, animated `React.memo` question list with difficulty badge, priority, video count, 🎯 personalized indicator, favorite/practiced marks |
 
 ### Architecture
-- **Single source of truth:** `getWorkspaceData(categorySlug, activeQuestionSlug?)` (server) fetches the category, the published question list (navigator), and the active question's full content (videos resolved via `getEmbedUrl` with `aspectRatio`) in one round-trip. Both routes feed the same `InterviewWorkspace`.
-- **Workspace header:** VS Code-like project header with folder icon, name, description, question count, difficulty-distribution pills and resume-status pill; search + difficulty filter sit in the toolbar (`lg`+).
+- **Single source of truth:** `getWorkspaceData(categorySlug, activeQuestionSlug?)` (server) fetches the category, a **projected** question list (navigator), and the active question in full (videos resolved via `getEmbedUrl` with `aspectRatio`) in one round-trip. Both routes feed the same `InterviewWorkspace`.
+- **Workspace header:** one cohesive toolbar — left: `← Library` + folder icon + name + `{N} Questions` + top-tags subtitle; center: difficulty-distribution pills + resume-status pill (divided by a border); right: search box + difficulty filter. Single baseline, ~110px.
 - **No layout shift:** the 3-column grid structure is constant across question switches; only inner column content re-animates (Framer Motion `AnimatePresence`), so pages never jump.
 - **State preservation:** search/difficulty filters are initialized from `useSearchParams` and carried in every navigator `<Link>` href, so they survive question navigation and back/forward without a remount glitch.
 - **Keyboard nav:** `ArrowUp`/`ArrowDown` move between questions in the filtered navigator list; mobile gets a sticky bottom nav (Prev/Next + open list).
 - **Responsive:** 3 columns ≥1024px (`lg`); 2 columns (Video+Answer) + navigator drawer at `md` (768–1023px); single column with sticky bottom navigation below `md`.
 - **Reduced motion:** Framer Motion transitions are disabled under `prefers-reduced-motion`; global `:focus-visible` ring provides consistent keyboard affordances.
 - **Premium gating:** `isPremium && !userHasPremium` locks the video, detailed answer, worked example and personalized answer.
+- **Performance:** the navigator list uses MongoDB field projection (no `answer` HTML serialized per question); the active question is fetched separately, in full.
 
 ### Component Tree
 ```

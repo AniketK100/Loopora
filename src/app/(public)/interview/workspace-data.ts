@@ -119,8 +119,12 @@ export async function getWorkspaceData(
     ? user.role === "admin" || user.role === "editor" || !!user.isPremium
     : false;
 
+  // Project only navigator fields for the list (avoids serializing large answer
+  // HTML for every question). The active question is fetched separately, in full.
   const [questionDocs, userDoc] = await Promise.all([
-    Question.find({ category: categoryDoc._id, isPublished: true }).sort({ frequencyRank: 1 }),
+    Question.find({ category: categoryDoc._id, isPublished: true })
+      .sort({ frequencyRank: 1 })
+      .select("slug question difficulty isPremium tags frequencyRank videos"),
     user ? User.findById(user.id).select("bookmarks practiced") : Promise.resolve(null),
   ]);
 
@@ -145,13 +149,12 @@ export async function getWorkspaceData(
     };
   });
 
-  let activeDoc =
-    activeQuestionSlug
-      ? questionDocs.find((q) => q.slug.toLowerCase() === activeQuestionSlug.toLowerCase())
-      : undefined;
-  if (!activeDoc && questionDocs.length > 0) {
-    activeDoc = questionDocs[0];
-  }
+  const activeQuery = activeQuestionSlug
+    ? { slug: activeQuestionSlug.toLowerCase(), category: categoryDoc._id }
+    : { category: categoryDoc._id, isPublished: true };
+  const activeDoc = await Question.findOne(activeQuery)
+    .populate("category", "slug name")
+    .sort({ frequencyRank: 1 });
 
   let activeQuestion: WorkspaceActiveQuestion | null = null;
   if (activeDoc) {

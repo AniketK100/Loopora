@@ -1,16 +1,16 @@
 /**
- * InterviewWorkspace — Three-Column Interview Experience
+ * InterviewWorkspace — Three-Column Interview Experience (flagship)
  *
  * Production-grade, desktop-first workspace for a single Interview Folder:
  *   • Left  (30%) Video Workspace  — browser-style presenter tabs (platform icons) above a
  *              flush, never-cropped player (CSS aspect-ratio) + Notes tab + Resources.
- *   • Center(42%) Answer Workspace  — tabbed (Short Summary / Detailed / Personalized), internal scroll.
- *   • Right (28%) Question Navigator— compact question list (search/filter live in the toolbar).
+ *   • Center(40%) Answer Workspace  — tabbed (Short Summary / Detailed / Personalized) with
+ *              copy/share actions and internal scroll for an optimal reading line length.
+ *   • Right (30%) Question Navigator— dense, animated question list with status badges.
  *
  * Layout is structurally constant across question switches (only inner content cross-fades),
- * so there is zero layout shift. Videos are never cropped because every player box uses the
- * resolved `aspect-ratio`. Responsive: 3-col from lg (≥1024), 2-col (Video+Answer) with a
- * navigator drawer on tablet, single column with a sticky bottom nav on mobile.
+ * so there is zero layout shift. Responsive: 3-col from lg, 2-col (Video+Answer) + drawer on
+ * tablet, single column with a sticky bottom nav on mobile.
  *
  * @module app/(public)/interview/InterviewWorkspace
  */
@@ -49,9 +49,9 @@ type AnswerTab = "summary" | "detailed" | "personalized";
 
 const DIFFICULTIES: { key: DifficultyFilter; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "easy", label: "🟢 Easy" },
-  { key: "medium", label: "🟡 Medium" },
-  { key: "hard", label: "🔴 Hard" },
+  { key: "easy", label: "Easy" },
+  { key: "medium", label: "Medium" },
+  { key: "hard", label: "Hard" },
 ];
 
 const DIFF_META: Record<string, { label: string; dot: string }> = {
@@ -79,7 +79,6 @@ const PLATFORM_ICON: Record<string, string> = {
   instagram: "📸",
 };
 
-// Unified, accessible focus ring used on every interactive element.
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg)]";
 
@@ -87,6 +86,13 @@ const categoryIcon = (category: WorkspaceCategory | null): string =>
   ICON_EMOJI[(category?.icon || "").toLowerCase()] || "📁";
 
 const platformIcon = (provider: string): string => PLATFORM_ICON[provider] || "🗣️";
+
+function stripHtml(html: string): string {
+  if (typeof document === "undefined") return html.replace(/<[^>]+>/g, "");
+  const el = document.createElement("div");
+  el.innerHTML = html;
+  return el.textContent || "";
+}
 
 interface InterviewWorkspaceProps {
   category: WorkspaceCategory;
@@ -110,7 +116,7 @@ export function InterviewWorkspace({
   );
   const [navOpen, setNavOpen] = useState(false);
 
-  const { activeResumeName, activeResumeId } = usePersonalizedAnswers(category.slug);
+  const { personalizedAnswers, activeResumeName, activeResumeId } = usePersonalizedAnswers(category.slug);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -129,6 +135,20 @@ export function InterviewWorkspace({
     for (const q of questions) dist[q.difficulty]++;
     return dist;
   }, [questions]);
+
+  const topTags = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const q of questions) for (const t of q.tags) counts[t] = (counts[t] || 0) + 1;
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([t]) => t);
+  }, [questions]);
+
+  const personalizedSlugs = useMemo(
+    () => new Set(Object.keys(personalizedAnswers)),
+    [personalizedAnswers]
+  );
 
   const buildHref = useCallback(
     (slug: string) => {
@@ -149,7 +169,6 @@ export function InterviewWorkspace({
     [router, buildHref]
   );
 
-  // Keyboard navigation: ArrowUp / ArrowDown switch questions in the filtered list.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const el = document.activeElement;
@@ -222,6 +241,7 @@ export function InterviewWorkspace({
     <QuestionList
       questions={filtered}
       activeId={activeQuestion._id}
+      personalizedSlugs={personalizedSlugs}
       onSelect={navigateTo}
     />
   );
@@ -231,14 +251,15 @@ export function InterviewWorkspace({
       <WorkspaceHeader
         category={category}
         difficultyDist={difficultyDist}
+        topTags={topTags}
         resumeName={activeResumeName}
         hasResume={!!activeResumeId}
         onOpenNav={() => setNavOpen(true)}
       >
-        <div className="hidden lg:block">{filterBar}</div>
+        <div className="lg:flex-1 lg:justify-end">{filterBar}</div>
       </WorkspaceHeader>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[30fr_42fr_28fr] gap-3 sm:gap-4 p-3 sm:p-4 pb-24 lg:pb-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[30fr_40fr_30fr] gap-3 p-2 sm:p-3 lg:p-4 pb-24 lg:pb-4">
         {/* LEFT — Video Workspace */}
         <section className="min-h-0 lg:overflow-y-auto" aria-label="Video workspace">
           <VideoWorkspace key={activeQuestion._id} question={activeQuestion} isLocked={isLocked} />
@@ -331,9 +352,7 @@ export function InterviewWorkspace({
           <button
             type="button"
             onClick={() => goRelative(1)}
-            disabled={
-              filtered.findIndex((q) => q._id === activeQuestion._id) >= filtered.length - 1
-            }
+            disabled={filtered.findIndex((q) => q._id === activeQuestion._id) >= filtered.length - 1}
             className={`px-3 py-2 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm disabled:opacity-40 ${FOCUS_RING}`}
             aria-label="Next question"
           >
@@ -347,12 +366,13 @@ export function InterviewWorkspace({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Workspace Header (VS Code-style project header)                            */
+/* Workspace Header — one cohesive toolbar (back · title · meta · filter)      */
 /* -------------------------------------------------------------------------- */
 
 function WorkspaceHeader({
   category,
   difficultyDist,
+  topTags,
   resumeName,
   hasResume,
   onOpenNav,
@@ -360,72 +380,86 @@ function WorkspaceHeader({
 }: {
   category: WorkspaceCategory;
   difficultyDist: { easy: number; medium: number; hard: number };
+  topTags: string[];
   resumeName?: string | null;
   hasResume: boolean;
   onOpenNav: () => void;
   children?: React.ReactNode;
 }) {
   return (
-    <header className="sticky top-16 z-20 shrink-0 border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] px-3 sm:px-4 py-2.5 flex items-center gap-3">
-      <span className="text-2xl shrink-0" aria-hidden="true">
-        {categoryIcon(category)}
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <h1 className="font-[family-name:var(--font-heading)] font-bold text-lg text-[var(--color-fg)] truncate">
-            {category.name}
-          </h1>
-          <span className="text-xs text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] shrink-0">
-            {category.questionCount} Questions
+    <header className="sticky top-16 z-20 shrink-0 border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] px-2 sm:px-4">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4 py-2.5">
+        {/* LEFT — back + title + subtitle */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Link
+            href="/interview"
+            className={`shrink-0 text-xs font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg-muted)] hover:text-[var(--color-accent)] ${FOCUS_RING} rounded px-1`}
+          >
+            ← Library
+          </Link>
+          <span className="text-2xl shrink-0" aria-hidden="true">
+            {categoryIcon(category)}
           </span>
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <h1 className="font-[family-name:var(--font-heading)] font-bold text-base sm:text-lg text-[var(--color-fg)] truncate">
+                {category.name}
+              </h1>
+              <span className="text-xs text-[var(--color-fg-muted)] font-[family-name:var(--font-body)] shrink-0">
+                {category.questionCount} Questions
+              </span>
+            </div>
+            {topTags.length > 0 && (
+              <p className="text-[11px] text-[var(--color-fg-muted)] truncate font-[family-name:var(--font-body)] hidden sm:block">
+                {topTags.join(" • ")}
+              </p>
+            )}
+          </div>
         </div>
-        {category.description && (
-          <p className="text-xs text-[var(--color-fg-muted)] truncate font-[family-name:var(--font-body)] hidden sm:block">
-            {category.description}
-          </p>
-        )}
-      </div>
 
-      {/* Metadata pills */}
-      <div className="hidden md:flex items-center gap-1.5 shrink-0 text-[11px] font-[family-name:var(--font-heading)] font-bold">
-        <span className="px-2 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
-          {DIFF_META.easy.dot} {difficultyDist.easy}
-        </span>
-        <span className="px-2 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
-          {DIFF_META.medium.dot} {difficultyDist.medium}
-        </span>
-        <span className="px-2 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
-          {DIFF_META.hard.dot} {difficultyDist.hard}
-        </span>
-        <span
-          className={[
-            "px-2 py-1 rounded-full border",
-            hasResume
-              ? "bg-green-50 border-[var(--color-success)] text-[var(--color-success)]"
-              : "bg-[var(--color-bg-alt)] border-[var(--color-border-light)] text-[var(--color-fg-muted)]",
-          ].join(" ")}
-          title={hasResume ? `Resume: ${resumeName}` : "No resume uploaded"}
+        {/* CENTER — difficulty distribution + resume status */}
+        <div className="hidden lg:flex flex-col items-center gap-1 shrink-0 px-3 border-x-2 border-[var(--color-border-light)]">
+          <div className="flex items-center gap-2 text-[11px] font-[family-name:var(--font-heading)] font-bold">
+            <span className="px-1.5 py-0.5 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
+              {DIFF_META.easy.dot} {difficultyDist.easy}
+            </span>
+            <span className="px-1.5 py-0.5 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
+              {DIFF_META.medium.dot} {difficultyDist.medium}
+            </span>
+            <span className="px-1.5 py-0.5 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border-light)] text-[var(--color-fg-muted)]">
+              {DIFF_META.hard.dot} {difficultyDist.hard}
+            </span>
+          </div>
+          <div
+            className={[
+              "flex items-center gap-1 text-[11px] font-[family-name:var(--font-heading)] font-bold px-2 py-0.5 rounded-full border",
+              hasResume
+                ? "bg-green-50 border-[var(--color-success)] text-[var(--color-success)]"
+                : "bg-[var(--color-bg-alt)] border-[var(--color-border-light)] text-[var(--color-fg-muted)]",
+            ].join(" ")}
+            title={hasResume ? `Resume: ${resumeName}` : "No resume uploaded"}
+          >
+            {hasResume ? "✅ Resume Loaded" : "📄 No Resume"}
+          </div>
+        </div>
+
+        {/* RIGHT — search + filter (passed as children) */}
+        <div className="flex items-center gap-2 shrink-0 lg:flex-1 lg:justify-end">{children}</div>
+
+        <button
+          type="button"
+          onClick={onOpenNav}
+          className={`lg:hidden shrink-0 px-3 py-1.5 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm bg-[var(--color-bg-alt)] ${FOCUS_RING}`}
         >
-          📄 {hasResume ? "Resume" : "No resume"}
-        </span>
+          ☰
+        </button>
       </div>
-
-      {children}
-
-      <button
-        type="button"
-        onClick={onOpenNav}
-        className={`lg:hidden shrink-0 px-3 py-1.5 border-2 border-[var(--color-border)] font-[family-name:var(--font-heading)] font-bold text-sm bg-[var(--color-bg-alt)] hover:bg-[var(--color-bg-alt)]/60 ${FOCUS_RING}`}
-      >
-        ☰ Questions
-      </button>
     </header>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* Filter Bar (search + difficulty) — lives in toolbar (lg) and drawer        */
+/* Filter Bar (search + difficulty) — toolbar (lg) and drawer                  */
 /* -------------------------------------------------------------------------- */
 
 function FilterBar({
@@ -441,9 +475,9 @@ function FilterBar({
 }) {
   return (
     <div className="flex flex-col sm:flex-row gap-2 w-full">
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <Input
-          label="Search this folder"
+          label="Search This Folder"
           placeholder="e.g. recursion, arrays..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -543,9 +577,9 @@ function VideoWorkspace({
         </div>
       ) : (
         <div className="border-2 border-[var(--color-border)] overflow-hidden bg-[var(--color-bg)]">
-          {/* Browser-style presenter tabs ABOVE the player */}
+          {/* Browser-style presenter tabs ABOVE the player (scrollable if many) */}
           <div
-            className="flex flex-wrap border-b-2 border-[var(--color-border-light)] bg-[var(--color-bg-alt)]/20 font-[family-name:var(--font-heading)]"
+            className="flex overflow-x-auto border-b-2 border-[var(--color-border-light)] bg-[var(--color-bg-alt)]/20 font-[family-name:var(--font-heading)]"
             role="tablist"
             aria-label="Video sources"
           >
@@ -567,7 +601,7 @@ function VideoWorkspace({
                     });
                   }}
                   className={[
-                    "px-3 py-2 text-xs font-bold transition-all border-r-2 border-[var(--color-border-light)] last:border-r-0 flex items-center gap-1.5",
+                    "px-3 py-2 text-xs font-bold transition-all border-r-2 border-[var(--color-border-light)] last:border-r-0 flex items-center gap-1.5 whitespace-nowrap shrink-0",
                     active
                       ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
                       : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]/40",
@@ -585,7 +619,7 @@ function VideoWorkspace({
               aria-selected={showNotes}
               onClick={() => setShowNotes(true)}
               className={[
-                "px-3 py-2 text-xs font-bold transition-all border-l-2 border-[var(--color-border-light)] ml-auto flex items-center gap-1.5",
+                "px-3 py-2 text-xs font-bold transition-all border-l-2 border-[var(--color-border-light)] ml-auto flex items-center gap-1.5 shrink-0 whitespace-nowrap",
                 showNotes
                   ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
                   : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-alt)]/40",
@@ -691,16 +725,64 @@ function AnswerWorkspace({
   reduceMotion: boolean;
 }) {
   const [tab, setTab] = useState<AnswerTab>("summary");
+  const [copied, setCopied] = useState(false);
   const { personalizedAnswers, isGenerating, activeResumeName, activeResumeId } =
     usePersonalizedAnswers(categorySlug);
   const personalized = personalizedAnswers[question.slug] || null;
 
+  const handleCopy = useCallback(async () => {
+    try {
+      const text = `${question.question}\n\n${stripHtml(question.detailedExplanation)}`;
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }, [question.question, question.detailedExplanation]);
+
+  const handleShare = useCallback(async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: question.question, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }
+    } catch {
+      /* share cancelled */
+    }
+  }, [question.question]);
+
   return (
     <Card decoration="none" className="border-2 border-[var(--color-border)] h-full flex flex-col">
-      <div className="flex border-b-2 border-[var(--color-border-light)] font-[family-name:var(--font-heading)] shrink-0" role="tablist" aria-label="Answer sections">
-        <AnswerTabButton label="🔑 Short Summary" isActive={tab === "summary"} onClick={() => setTab("summary")} />
-        <AnswerTabButton label="💡 Detailed" isActive={tab === "detailed"} onClick={() => setTab("detailed")} />
-        <AnswerTabButton label="🎯 Personalized" isActive={tab === "personalized"} onClick={() => setTab("personalized")} />
+      {/* Tabs + actions */}
+      <div className="flex items-stretch border-b-2 border-[var(--color-border-light)] font-[family-name:var(--font-heading)] shrink-0">
+        <div className="flex flex-1" role="tablist" aria-label="Answer sections">
+          <AnswerTabButton label="🔑 Summary" isActive={tab === "summary"} onClick={() => setTab("summary")} />
+          <AnswerTabButton label="💡 Detailed" isActive={tab === "detailed"} onClick={() => setTab("detailed")} />
+          <AnswerTabButton label="🎯 Personalized" isActive={tab === "personalized"} onClick={() => setTab("personalized")} />
+        </div>
+        <div className="flex items-center gap-1 px-2 border-l-2 border-[var(--color-border-light)]">
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={`px-2 py-1 text-xs font-bold border-2 border-[var(--color-border)] hover:bg-[var(--color-bg-alt)] ${FOCUS_RING} rounded`}
+            aria-label="Copy answer"
+          >
+            {copied ? "✓ Copied" : "⧉ Copy"}
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            className={`px-2 py-1 text-xs font-bold border-2 border-[var(--color-border)] hover:bg-[var(--color-bg-alt)] ${FOCUS_RING} rounded`}
+            aria-label="Share question"
+          >
+            ↗ Share
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
@@ -711,7 +793,7 @@ function AnswerWorkspace({
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
             transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
-            className="font-[family-name:var(--font-body)]"
+            className="font-[family-name:var(--font-body)] max-w-prose"
           >
             {isLocked ? (
               <Paywall />
@@ -950,16 +1032,18 @@ function SuggestEditForm({ question }: { question: WorkspaceActiveQuestion }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Question List (right column / drawer) — compact, animated cards             */
+/* Question List (right column / drawer) — dense, animated cards               */
 /* -------------------------------------------------------------------------- */
 
 const QuestionListItem = React.memo(function QuestionListItem({
   q,
   isActive,
+  isPersonalized,
   onSelect,
 }: {
   q: WorkspaceQuestionNav;
   isActive: boolean;
+  isPersonalized: boolean;
   onSelect: (slug: string) => void;
 }) {
   const difficultyBadge = `difficulty-${q.difficulty}` as
@@ -973,7 +1057,7 @@ const QuestionListItem = React.memo(function QuestionListItem({
       onClick={() => onSelect(q.slug)}
       aria-current={isActive ? "true" : undefined}
       className={[
-        "w-full text-left pl-3 pr-3 py-2.5 border-2 border-l-4 transition-all flex items-start gap-2 relative",
+        "w-full text-left pl-3 pr-3 py-2 border-2 border-l-4 transition-all flex items-start gap-2 relative",
         isActive
           ? "border-[var(--color-accent)] border-l-[var(--color-accent)] bg-[var(--color-accent)]/10"
           : "border-[var(--color-border-light)] border-l-transparent bg-[var(--color-bg)] hover:border-[var(--color-border)] hover:bg-[var(--color-bg-alt)]/40 hover:-translate-y-px",
@@ -991,6 +1075,11 @@ const QuestionListItem = React.memo(function QuestionListItem({
               🎬 {q.videoCount}
             </span>
           )}
+          {isPersonalized && (
+            <span className="text-[10px] font-bold text-green-700" title="Personalized answer available" aria-label="Personalized">
+              🎯
+            </span>
+          )}
           {q.isPremium && <span className="text-[10px] font-bold text-[var(--color-warning)]" aria-label="Premium">🔒</span>}
           {q.isFavorited && <span className="text-[10px]" title="Favorited" aria-label="Favorited">⭐</span>}
           {q.isPracticed && <span className="text-[10px]" title="Practiced" aria-label="Practiced">✅</span>}
@@ -1004,10 +1093,12 @@ const QuestionListItem = React.memo(function QuestionListItem({
 function QuestionList({
   questions,
   activeId,
+  personalizedSlugs,
   onSelect,
 }: {
   questions: WorkspaceQuestionNav[];
   activeId: string;
+  personalizedSlugs: Set<string>;
   onSelect: (slug: string) => void;
 }) {
   const activeRef = useRef<HTMLDivElement | null>(null);
@@ -1025,12 +1116,17 @@ function QuestionList({
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
+    <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
       {questions.map((q) => {
         const isActive = q._id === activeId;
         return (
           <div key={q._id} ref={isActive ? activeRef : undefined}>
-            <QuestionListItem q={q} isActive={isActive} onSelect={onSelect} />
+            <QuestionListItem
+              q={q}
+              isActive={isActive}
+              isPersonalized={personalizedSlugs.has(q.slug)}
+              onSelect={onSelect}
+            />
           </div>
         );
       })}

@@ -33,11 +33,25 @@ export async function generateMetadata({
 
   if (!category) return {};
 
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://loopora.app";
+  const canonical = `/interview/${category.slug}`;
+  const description = category.description || `Practice model answers for ${category.name} interviews.`;
+
   return {
     title: `${category.name} Interview Questions`,
-    description: category.description || `Practice model answers for ${category.name} interviews.`,
-    alternates: {
-      canonical: `/interview/${category.slug}`,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: `${category.name} Interview Questions`,
+      description,
+      url: `${SITE_URL}${canonical}`,
+      siteName: "Loopora",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${category.name} Interview Questions`,
+      description,
     },
   };
 }
@@ -73,7 +87,7 @@ export default async function CategoryQuestionsPage({ params }: CategoryQuestion
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-3">
+      <div className="max-w-[1800px] mx-auto px-2 sm:px-3 lg:px-4 py-2">
         {/* Breadcrumb */}
         <nav
           className="text-sm font-[family-name:var(--font-heading)] font-bold text-[var(--color-fg-muted)] mb-2"
