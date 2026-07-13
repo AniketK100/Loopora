@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.0.0] - 2026-07-14 — Final Phase 2 Production Release & Enterprise Stabilization
+
+### Added (SaaS Admin Features)
+- **Enterprise Delete Flow** — Added administrative user deletion support (`DELETE /api/admin/users/[id]`). Supports both soft-deletion (`isDeleted: true` blocking active logins) and cascading hard-deletion (cleaning up bookmarks, progress, resumes, AI analyses, sessions, and audits).
+- **Deletion UI Confirmation Modal** — Interactive modal in User Accounts page warning about related user data, offering soft/hard selection, and requiring typing `DELETE` to unlock.
+- **Throttled Live Timestamps** — Dynamic `lastLoginAt` tracking in `auth.config.ts` JWT callbacks, throttled to 1 update per minute. Live UTC time rendering + absolute format, auto-refreshing client-side every 60 seconds.
+
+### Fixed
+- **Admin Sidebar Layout** — Replaced `h-screen` sticky sidebar layouts with a fixed-height `h-screen overflow-hidden` grid container on desktop, fixing scroll clipping, banner offsets, and footer overlapping.
+- **Navigation Indicator** — Swapped solid black active indicator blocks with the primary brand accent color.
+- **ESLint & Compiler Warnings** — Cleaned up all unused variables, parameters, and imports to ensure zero compilation or linter warnings.
+
 ## [2.6.0] - 2026-07-12 — Production audit: security hardening, perf indexes, landing & progress-card fixes
 
 ### Security

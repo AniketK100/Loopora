@@ -37,11 +37,11 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const user = session.user;
 
   return (
-    <div className="w-full min-h-screen flex flex-col">
+    <div className="w-full min-h-screen md:h-screen flex flex-col md:overflow-hidden">
       <ImpersonationBanner />
-      <div className="paper-grain flex flex-1 min-h-0 flex-col md:flex-row">
+      <div className="paper-grain flex flex-1 min-h-0 flex-col md:flex-row md:overflow-hidden">
         {/* Sidebar Navigation */}
-        <aside className="flex flex-col bg-[var(--color-bg)] border-b-2 md:border-b-0 md:border-r-2 border-[var(--color-border)] md:w-64 md:h-screen md:sticky md:top-0 z-10 shrink-0">
+        <aside className="flex flex-col bg-[var(--color-bg)] border-b-2 md:border-b-0 md:border-r-2 border-[var(--color-border)] md:w-64 h-auto md:h-full z-10 shrink-0">
           {/* Brand Header */}
           <div className="p-6 border-b-2 border-dashed border-[var(--color-border-light)] flex items-center justify-between shrink-0">
             <Link href="/" aria-label="Loopora home">
@@ -91,7 +91,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 md:h-screen md:overflow-y-auto p-6 md:p-10">
+        <main className="flex-1 md:h-full md:overflow-y-auto p-6 md:p-10">
           <div className="max-w-5xl mx-auto space-y-8">{children}</div>
         </main>
       </div>

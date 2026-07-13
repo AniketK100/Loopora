@@ -42,6 +42,8 @@ export interface User {
   } | null;
   createdAt: string;
   lastLoginAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 // =============================================================================

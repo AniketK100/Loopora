@@ -57,8 +57,6 @@ export function ResumeUploadPanel({
     canUpload,
     isAuthenticated,
     uploadResume,
-    setActiveResume: _setActiveResume,
-    deleteResume: _deleteResume,
     clearMessages,
   } = useResumeUpload();
 

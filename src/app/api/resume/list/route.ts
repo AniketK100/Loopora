@@ -7,7 +7,7 @@
  * @route GET /api/resume/list
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db/connection";
 import { Resume } from "@/lib/db/models/Resume";
@@ -17,7 +17,7 @@ import { User } from "@/lib/db/models/User";
 const FREE_MAX_RESUMES = 1;
 const PREMIUM_MAX_RESUMES = 3;
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session || !session.user || !session.user.id) {

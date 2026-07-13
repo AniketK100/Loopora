@@ -359,10 +359,28 @@ Impersonates another user (admin only).
 - **Auth:** Admin
 - **Body:** `{ "userId": "ObjectId" }`
 
-### Admin Sub-routes
-- `GET/PATCH/DELETE /api/admin/users/[id]` — User management
-- `GET/DELETE /api/admin/sessions/[id]` — Session management
-- `GET/DELETE /api/admin/ratelimits/[id]` — Rate limit management
+### Administrative User Management
+
+#### DELETE /api/admin/users/[id]
+Deletes a user account.
+- **Auth:** Admin only
+- **Query Params:**
+  - `mode`: `"soft"` (default) or `"hard"`.
+    - `"soft"` marks `isDeleted: true` and blocks future credentials/OAuth logins but keeps all user data.
+    - `"hard"` deletes the user document.
+  - `deleteRelated`: `"true"` or `"false"`. Cascades deletion of bookmarks, practiced progress, resumes, AI analyses, active sessions, and suggestion logs.
+- **Response:** `{ "success": true, "message": "..." }`
+- **Errors:** 400 invalid ID format or self-deletion attempt, 401 unauthorized, 404 user not found, 500 server error.
+
+#### PATCH /api/admin/users/[id]
+Updates a user profile's role or premium status.
+- **Auth:** Admin only
+- **Body:** `{ "role": "user" | "editor" | "admin", "isPremium": boolean }`
+- **Response:** `{ "success": true, "message": "...", "user": { ... } }`
+
+#### Other Admin Routes
+- `GET/DELETE /api/admin/sessions/[id]` — Revoke/Delete active session tracking record.
+- `GET/DELETE /api/admin/ratelimits/[id]` — Clear/Delete rate-limiting block records for an IP address.
 
 ---
 

@@ -24,6 +24,8 @@ export interface IUserDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;
+  isDeleted?: boolean;
+  deletedAt?: Date;
 }
 
 const UserSchema = new Schema<IUserDocument>(
@@ -61,6 +63,8 @@ const UserSchema = new Schema<IUserDocument>(
       ],
     },
     lastLoginAt: { type: Date },
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date },
   },
   {
     timestamps: true,

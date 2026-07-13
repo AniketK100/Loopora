@@ -129,7 +129,7 @@ const providers: Provider[] = [
         password,
         user?.passwordHash || DUMMY_HASH
       );
-      if (!user || !user.passwordHash || !passwordMatch) {
+      if (!user || !user.passwordHash || !passwordMatch || user.isDeleted) {
         return null;
       }
 

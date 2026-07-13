@@ -58,7 +58,6 @@ export function InterviewWorkspaceWrapper({
     setActiveResume,
     deleteResume,
     renameResume,
-    refreshResumes: _refreshResumes,
   } = useResumeUpload();
 
   const { setActiveResume: setContextResume, clearAll: clearContextAnswers } =

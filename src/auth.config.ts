@@ -25,6 +25,7 @@ type AppToken = JWT & {
   isPremium?: boolean;
   adminUser?: AdminSnapshot;
   impersonatedUser?: ImpersonatedUser;
+  lastLoginUpdate?: number;
 };
 
 type SessionUpdate = Partial<Session> & {
@@ -77,6 +78,11 @@ export const authConfig = {
         appToken.isPremium = user.isPremium;
       }
 
+      let shouldUpdateLastLogin = false;
+      if (user) {
+        shouldUpdateLastLogin = true;
+      }
+
       if (trigger === "update" && session) {
         const update = session as SessionUpdate;
 
@@ -89,6 +95,7 @@ export const authConfig = {
             email: appToken.email,
           };
           appToken.impersonatedUser = update.impersonateUser;
+          shouldUpdateLastLogin = true;
         } else if (update.stopImpersonation) {
           if (appToken.adminUser) {
             const admin = appToken.adminUser;
@@ -100,8 +107,28 @@ export const authConfig = {
           }
           delete appToken.impersonatedUser;
           delete appToken.adminUser;
+          shouldUpdateLastLogin = true;
         } else {
-          return { ...appToken, ...update };
+          // Merge updates manually to preserve helper properties
+          Object.assign(appToken, update);
+          shouldUpdateLastLogin = true;
+        }
+      }
+
+      // Throttle database update to once per minute to prevent load spikes
+      const now = Date.now();
+      const lastUpdate = appToken.lastLoginUpdate ? Number(appToken.lastLoginUpdate) : 0;
+      if (appToken.id && (shouldUpdateLastLogin || now - lastUpdate > 60 * 1000)) {
+        appToken.lastLoginUpdate = now;
+        if (process.env.NEXT_RUNTIME !== "edge") {
+          try {
+            const { connectDB } = await import("@/lib/db/connection");
+            const { User } = await import("@/lib/db/models/User");
+            await connectDB();
+            await User.findByIdAndUpdate(appToken.id, { lastLoginAt: new Date() });
+          } catch (err) {
+            console.error("[Auth Config] Throttled lastLoginAt update error:", err);
+          }
         }
       }
 

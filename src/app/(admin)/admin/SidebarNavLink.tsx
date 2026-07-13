@@ -31,7 +31,7 @@ export function SidebarNavLink({ href, children }: SidebarNavLinkProps) {
         "transition-all duration-[var(--transition-fast)]",
         "text-[var(--color-fg)] hover:translate-x-[2px]",
         isActive
-          ? "bg-[var(--color-fg)] text-[var(--color-bg)] border-[var(--color-fg)]"
+          ? "bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-border)]"
           : "border-transparent hover:bg-[var(--color-bg-alt)] hover:border-[var(--color-border-light)]",
       ].join(" ")}
     >

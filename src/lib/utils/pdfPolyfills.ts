@@ -21,7 +21,7 @@ if (typeof G.DOMMatrix === "undefined") {
     m31: number = 0; m32: number = 0; m33: number = 1; m34: number = 0;
     m41: number = 0; m42: number = 0; m43: number = 0; m44: number = 1;
     is2D: boolean = true; isIdentity: boolean = true;
-    constructor(_init?: string | number[]) { /* no-op for pdfjs use-cases */ }
+    constructor() { /* no-op for pdfjs use-cases */ }
     translate(): DOMMatrix { return this; }
     scale(): DOMMatrix { return this; }
     rotate(): DOMMatrix { return this; }

@@ -50,7 +50,6 @@ function QualityIndicator({ score }: { score: number }) {
 export function ResumeManager({
   resumes,
   maxResumes,
-  isPremium: _isPremium,
   isUploading,
   uploadStage,
   onSetActive,
