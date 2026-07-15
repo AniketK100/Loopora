@@ -1,7 +1,8 @@
 /**
  * Signup Page — Server Component
  *
- * Renders the credentials signup portal in a centered, paper-grain themed layout.
+ * Renders the registration form. Redirects authenticated users
+ * immediately to the home page to prevent redundant signup attempts.
  *
  * @route /signup
  * @see 03_App_Flow.md §1 — Site Map (public)
@@ -9,6 +10,8 @@
 
 import { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { SignupForm } from "./SignupForm";
 
 export const metadata: Metadata = {
@@ -16,7 +19,13 @@ export const metadata: Metadata = {
   description: "Create an account on Loopora to track your interview prep progress.",
 };
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  // If the user already has a session, redirect to prevent signup form presentation
+  const session = await auth();
+  if (session?.user) {
+    redirect("/");
+  }
+
   return (
     <main className="paper-grain min-h-screen flex flex-col justify-center items-center p-4">
       {/* Brand Header */}

@@ -40,13 +40,13 @@ export default auth((req) => {
     default-src 'self';
     ${scriptSrc}
     style-src 'self' 'unsafe-inline';
-    img-src 'self' data: blob: res.cloudinary.com img.youtube.com i.vimeocdn.com;
+    img-src 'self' data: blob: res.cloudinary.com img.youtube.com i.vimeocdn.com lh3.googleusercontent.com;
     font-src 'self' data:;
-    frame-src 'self' https://www.youtube.com/ https://www.youtube-nocookie.com/ https://player.vimeo.com/ https://www.loom.com/ https://drive.google.com/ https://www.instagram.com/;
-    connect-src 'self' ws: wss:;
+    frame-src 'self' https://www.youtube.com/ https://www.youtube-nocookie.com/ https://player.vimeo.com/ https://www.loom.com/ https://drive.google.com/ https://www.instagram.com/ https://accounts.google.com/;
+    connect-src 'self' ws: wss: https://accounts.google.com;
     object-src 'none';
     base-uri 'self';
-    form-action 'self';
+    form-action 'self' https://accounts.google.com;
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;

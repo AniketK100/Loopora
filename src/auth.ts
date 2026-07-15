@@ -5,6 +5,11 @@
  * NextAuth. Credentials authentication verifies user passwords using bcryptjs
  * against MongoDB.
  *
+ * Google OAuth: On first sign-in, automatically creates a MongoDB User record
+ * with role="user" and isPremium=false. On subsequent sign-ins, the existing
+ * record is reused. The real MongoDB _id is always propagated into the JWT so
+ * that session.user.id is consistent across both auth providers.
+ *
  * @module auth
  * @see 05_Backend_Schema_Data_Auth.md §3 — Auth Design
  */
@@ -151,14 +156,17 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      // Map Google profile to default role
+      // Map Google profile fields to our user shape.
+      // NOTE: role and isPremium here are only used as initial values when the
+      // user object is passed to the signIn callback below. The real authoritative
+      // values always come from MongoDB (see signIn callback).
       profile(profile) {
         return {
-          id: profile.sub,
+          id: profile.sub,           // temporary — replaced by MongoDB _id in signIn callback
           name: profile.name,
           email: profile.email,
           image: profile.picture,
-          role: "user", // Google logins default to 'user' role
+          role: "user" as const,
           isPremium: false,
         };
       },
@@ -169,12 +177,122 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers,
+  callbacks: {
+    ...authConfig.callbacks,
+
+    /**
+     * signIn callback — runs before the JWT is minted.
+     *
+     * For Google logins this is the ONLY place where we can:
+     * 1. Find or create the MongoDB User record (upsert — race-condition safe)
+     * 2. Overwrite user.id with the real MongoDB _id so the jwt callback stores it
+     *
+     * Returning false cancels the sign-in. Returning true allows it.
+     */
+    async signIn({ user, account }) {
+      if (account?.provider !== "google") {
+        // Credentials flow: authorize() already validated the user — nothing to do here.
+        return true;
+      }
+
+      try {
+        await connectDB();
+
+        const email = user.email?.toLowerCase();
+        if (!email) {
+          console.error("[Auth] Google sign-in rejected: no email in profile");
+          return false; // Reject sign-in if Google didn't supply an email
+        }
+
+        // Atomic find-or-create using upsert — prevents duplicate users even
+        // under concurrent cold-start scenarios on Vercel.
+        //
+        // new: false → returns the document AS IT WAS before the update.
+        //   - Returns null  → document did NOT exist → was just inserted (new user).
+        //   - Returns doc   → document existed → existing user signing in.
+        //
+        // This is the only reliable way to detect "was this an insert or an update?"
+        // without a separate findOne call (which would introduce a TOCTOU race).
+        const existingDoc = await User.findOneAndUpdate(
+          { email },
+          {
+            $setOnInsert: {
+              name: user.name || email.split("@")[0],
+              email,
+              authProvider: "google",
+              role: "user",
+              isPremium: false,
+              bookmarks: [],
+              practiced: [],
+              selectedFolders: [],
+            },
+          },
+          {
+            upsert: true,
+            new: false,             // ← return pre-update doc (null if freshly inserted)
+            setDefaultsOnInsert: true,
+          }
+        );
+
+        // If existingDoc is null the upsert inserted a new document.
+        // Re-fetch to get the generated _id and defaults.
+        const dbUser = existingDoc ?? await User.findOne({ email }).lean();
+
+        if (!dbUser) {
+          // Should be impossible after a successful upsert, but guard anyway
+          console.error("[Auth] Google signIn: failed to locate user after upsert", email);
+          return false;
+        }
+
+        // Check for soft-deleted account — block login
+        if (dbUser.isDeleted) {
+          console.warn("[Auth] Google sign-in rejected: account is soft-deleted", email);
+          return false;
+        }
+
+        // If the account existed as credentials-only, we allow them to also use
+        // Google (account linking by email). We do NOT change their existing role
+        // or isPremium status.
+
+        // Overwrite user.id with the real MongoDB _id.
+        // This value is what gets written into the JWT as token.id (see jwt callback
+        // in auth.config.ts), making session.user.id a proper MongoDB ObjectId string.
+        user.id = dbUser._id.toString();
+        user.role = (dbUser as { role: "user" | "editor" | "admin" }).role;
+        user.isPremium = (dbUser as { isPremium: boolean }).isPremium;
+
+        // Fire PostHog analytics for new sign-ups only.
+        // existingDoc === null → this was a fresh insert → truly new user.
+        const isNewUser = existingDoc === null;
+        if (isNewUser) {
+          try {
+            const { getPostHogClient } = await import("@/lib/posthog-server");
+            getPostHogClient().capture({
+              distinctId: user.id,
+              event: "user_signed_up",
+              properties: { auth_provider: "google" },
+            });
+          } catch {
+            // PostHog failure must never block authentication
+          }
+        }
+
+        return true;
+      } catch (error) {
+        console.error("[Auth] Google signIn callback error:", error);
+        // Return false to show the error page rather than a broken session
+        return false;
+      }
+    },
+  },
   events: {
     async signIn({ user, account }) {
+      // At this point user.id is guaranteed to be the MongoDB _id string for both
+      // credentials and Google logins (Google was corrected in the signIn callback above).
       try {
         await connectDB();
         const headersList = await headers();
-        const userAgent = headersList.get("user-agent") || "";
+        const userAgent = headersList.get("user-agent") || "Unknown";
         const ip =
           headersList.get("x-forwarded-for")?.split(",")[0].trim() ||
           headersList.get("x-real-ip") ||
@@ -182,6 +300,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const device = parseUserAgent(userAgent);
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         const loginMethod = account?.provider === "google" ? "google" : "credentials";
+
+        // Guard: user.id must be a valid 24-char hex ObjectId to prevent storing
+        // garbage in the Session collection.
+        if (!user.id || !/^[a-f\d]{24}$/i.test(user.id)) {
+          console.error("[Auth Event] Skipping session record: invalid user.id", user.id);
+          return;
+        }
 
         // Create the session tracking record in local DB
         await Session.create({

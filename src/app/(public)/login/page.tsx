@@ -1,7 +1,8 @@
 /**
  * Login Page — Server Component
  *
- * Renders the credentials login portal in a centered, paper-grain themed layout.
+ * Renders the credentials login portal. Redirects authenticated users
+ * immediately to the home page to prevent redundant login attempts.
  *
  * @route /login
  * @see 03_App_Flow.md §1 — Site Map (public)
@@ -10,6 +11,8 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
@@ -17,7 +20,13 @@ export const metadata: Metadata = {
   description: "Sign in to Loopora to access high-quality Q&As and track your interview practice.",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  // If the user already has a session, redirect to prevent login form presentation
+  const session = await auth();
+  if (session?.user) {
+    redirect("/");
+  }
+
   return (
     <main className="paper-grain min-h-screen flex flex-col justify-center items-center p-4">
       {/* Brand Header */}
