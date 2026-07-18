@@ -165,7 +165,7 @@ const PLATFORMS: VideoPlatform[] = [
     patterns: [/instagram\.com\/reel\/([a-zA-Z0-9_-]+)/i, new RegExp(`${IG_PREFIX.source}\\/reel\\/([a-zA-Z0-9_-]+)`, "i")],
     buildEmbed: (match) => ({
       kind: "iframe",
-      embedUrl: `https://www.instagram.com/reel/${match[1]}/embed`,
+      embedUrl: `https://www.instagram.com/p/${match[1]}/embed`,
     }),
   },
   {
@@ -175,7 +175,7 @@ const PLATFORMS: VideoPlatform[] = [
     patterns: [new RegExp(`${IG_PREFIX.source}\\/reels\\/([a-zA-Z0-9_-]+)`, "i")],
     buildEmbed: (match) => ({
       kind: "iframe",
-      embedUrl: `https://www.instagram.com/reel/${match[1]}/embed`,
+      embedUrl: `https://www.instagram.com/p/${match[1]}/embed`,
     }),
   },
   {

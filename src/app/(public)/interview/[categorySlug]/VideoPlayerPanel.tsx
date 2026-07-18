@@ -142,6 +142,19 @@ export function VideoPlayerPanel({
               </div>
             )}
 
+            {currentVideo && (currentVideo.url.includes("instagram.com") || currentVideo.provider === "instagram") && (
+              <div className="px-4 pt-1 pb-2 flex justify-start">
+                <a
+                  href={currentVideo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold font-[family-name:var(--font-heading)] border-2 border-[var(--color-border-light)] bg-[var(--color-bg-alt)]/20 hover:bg-[var(--color-bg-alt)]/40 hover:border-[var(--color-border)] transition-all text-[var(--color-fg)] rounded"
+                >
+                  📸 Playback restricted? Click here to watch directly on Instagram ↗
+                </a>
+              </div>
+            )}
+
             {/* Video Selector (if multiple videos) */}
             {resolvedVideos.length > 1 && (
               <div className="px-4 pb-3 space-y-2">

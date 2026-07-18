@@ -497,6 +497,18 @@ export function QuestionForm({ categories, initialData }: QuestionFormProps) {
                           />
                         )}
                       </div>
+                      {(vid.url.includes("instagram.com") || vid.embedUrl.includes("instagram.com")) && (
+                        <div className="mt-2 flex justify-start">
+                          <a
+                            href={vid.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold border-2 border-[var(--color-border-light)] bg-[var(--color-bg-alt)]/20 hover:bg-[var(--color-bg-alt)]/40 hover:border-[var(--color-border)] transition-all text-[var(--color-fg)] rounded"
+                          >
+                            📸 Playback restricted? Open directly on Instagram ↗
+                          </a>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
